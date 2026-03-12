@@ -1,0 +1,65 @@
+# Bước đầu tiên (First Steps)
+
+Trong bài viết này, bạn sẽ làm quen với những khái niệm cơ bản nhất của framework Next.js-Backend. Để giúp bạn nhanh chóng nắm bắt các cấu trúc cốt lõi, chúng ta sẽ xem xét cách thiết lập và vận hành một ứng dụng cơ bản.
+
+## Yêu cầu
+
+Tiền đề để sử dụng framework là **Bun** phải được cài đặt trên hệ thống của bạn. Do framework phụ thuộc chủ yếu vào sức mạnh của ElysiaJS và các API nguyên bản (Native APIs) tốc độ cao, việc sử dụng môi trường chạy (runtime) Bun là yêu cầu bắt buộc.
+
+## Cài đặt
+
+Việc khởi tạo một dự án mới rất đơn giản. Bạn có thể sao chép mã nguồn mẫu thư mục gốc để bắt đầu.
+
+```bash
+# Cài đặt toàn bộ dependencies:
+bun install
+```
+
+## Chạy các mẫu thử (Samples)
+
+Cách nhanh nhất để hiểu về framework là chạy thử các dự án mẫu (samples) có sẵn trong dự án.
+
+Chúng tôi cung cấp một loạt các tập lệnh (scripts) để chạy các môi trường khác nhau:
+
+```bash
+# 1. Routing cơ bản & Dependency Injection
+bun run start:basic
+
+# 2. Validation dữ liệu nâng cao sử dụng DTO
+bun run start:validation
+
+# 3. Vòng đời Request (Sử dụng Guards và Interceptors)
+bun run start:guards
+
+# 4. Giao diện Swagger OpenAPI (chạy trên cổng 3003)
+bun run start:swagger
+```
+
+## Điểm Tích Hợp Ứng Dụng (Entry Point)
+
+Để khởi động toàn bộ hệ sinh thái của framework, bạn chỉ cần một module gốc (Root Module) và kết nối nó vào cấu trúc **Route Handlers** của Next.js (bên trong tệp `app/api/[[...slug]]/route.ts`). Mọi thao tác xử lý hệ thống mạng phức tạp nhất đều quy về `ElysiaFactory`.
+
+Cấu hình máy chủ Next.js của bạn giờ đây sẽ thanh thoát như sau:
+
+```typescript
+// app/api/[[...slug]]/route.ts
+import { Module, ElysiaFactory } from 'next-js-backend';
+import { UsersController } from '@/server/users.controller';
+import { UsersService } from '@/server/users.service';
+
+@Module({
+  controllers: [UsersController],
+  providers: [UsersService]
+})
+class AppModule {}
+
+// NGĂN CHẶN CACHE TĨNH CHO TOÀN BỘ BACKEND
+export const dynamic = 'force-dynamic';
+
+// Next.js-Backend tự động biên dịch và gắn kết các hàm phương thức HTTP
+export const { GET, POST, PUT, PATCH, DELETE, OPTIONS } = ElysiaFactory.createNextJsHandlers(AppModule, { 
+    globalPrefix: '/api' 
+});
+```
+
+Chỉ với một thao tác trích xuất `createNextJsHandlers`, máy móc framework sẽ tự động phân giải cấu hình, nhúng Injector và định tuyến yêu cầu từ Frontend thẳng tuột xuống Backend mà không gặp phải bất kỳ một rào cản cổng trung gian hay lỗi CORS nào!

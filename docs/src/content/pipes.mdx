@@ -1,0 +1,65 @@
+# Pipes (Ống chuyển đổi)
+
+Một ống chuyển đổi (pipe) là một lớp được đánh dấu bằng decorator `@Injectable()` và triển khai (implement) giao diện (interface) `PipeTransform`.
+
+Pipes thường được sử dụng cho hai mục đích chính:
+- **Biến đổi dữ liệu (Transformation)**: Chuyển đổi dữ liệu đầu vào sang định dạng mong muốn (ví dụ: từ chuỗi văn bản sang số nguyên).
+- **Xác thực dữ liệu (Validation)**: Kiểm tra dữ liệu đầu vào. Nếu dữ liệu hợp lệ, nó sẽ được chuyển tiếp không thay đổi; ngược lại, pipe sẽ ném ra một ngoại lệ (exception) để từ chối yêu cầu.
+
+Trong cả hai trường hợp, pipes tương tác với tập hợp tham số (arguments) đang được gửi đến phương thức xử lý (route handler) của controller. Framework tự động chèn pipe vào trước khi phương thức được gọi, cho phép pipe nhận, xử lý, và trả về kết quả tương ứng trước khi tiến trình chính tiếp tục.
+
+## Pipe Xác thực Mặc định (`ValidationPipe`)
+
+Như một tiện ích sẵn có (Out-of-the-box), framework Next.js-Backend cung cấp sẵn `ValidationPipe`, tích hợp trực tiếp với thư viện xác thực phổ biến là **class-validator**.
+
+```typescript
+import { UsePipes, ValidationPipe, Controller, Post, Body } from './src';
+import { IsString, IsInt } from 'class-validator';
+
+// 1. Định nghĩa lớp DTO (Data Transfer Object)
+export class CreateCatDto {
+  @IsString()
+  name: string;
+
+  @IsInt()
+  age: number;
+}
+
+@Controller('cats')
+export class CatsController {
+  
+  @Post()
+  @UsePipes(new ValidationPipe()) // Áp dụng pipe xác thực cho route này
+  async create(@Body() createCatDto: CreateCatDto) {
+    // Nếu dữ liệu vượt qua quá trình xác thực, `createCatDto` đảm bảo là một đối tượng hợp lệ.
+    return { success: true, data: createCatDto };
+  }
+}
+```
+
+Nếu một yêu cầu gửi đến chứa dữ liệu không hợp lệ (ví dụ: trường `age` là một chuỗi thay vì số nguyên), `ValidationPipe` sẽ tự động ném ra `ValidationException`. Điều này dẫn đến một phản hồi **400 Bad Request** trả về cho client kèm theo danh sách chi tiết các lỗi xác thực.
+
+## Xác thực Nguyên bản bằng TypeBox (Native TypeBox)
+
+ElysiaJS hỗ trợ tích hợp nguyên bản sâu sắc với thư viện **TypeBox** của Sinclair. Vì framework được xây dựng dựa trên Elysia, bạn có thể bỏ qua quá trình xử lý của `ValidationPipe` truyền thống và thay thế hoàn toàn hiệu năng bằng cách sử dụng các định nghĩa schema của TypeBox trực tiếp bên trong tham số decorator.
+
+```typescript
+import { t } from 'elysia';
+import { Controller, Post, Body } from './src';
+
+// Biên dịch Schema trực tiếp bằng engine nguyên bản (Native) của Elysia
+const CreateDogSchema = t.Object({
+  name: t.String(),
+  age: t.Numeric()
+});
+
+@Controller('dogs')
+export class DogsController {
+
+  // @Body nhận trực tiếp đối tượng TypeBox Schema
+  @Post() 
+  async create(@Body(CreateDogSchema) body: { name: string, age: number }) {
+    return 'Hành động tạo mới dữ liệu đã được xử lý thành công';
+  }
+}
+```

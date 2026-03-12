@@ -1,0 +1,122 @@
+# Controllers (Bộ điều khiển)
+
+Controllers chịu trách nhiệm tiếp nhận các **requests** (yêu cầu) từ phía client và gửi trả lại **responses** (phản hồi).
+
+Mục đích chính của một controller là xử lý và điều hướng các yêu cầu cụ thể cho ứng dụng. Cơ chế **routing (định tuyến)** sẽ quyết định controller nào chịu trách nhiệm tiếp nhận yêu cầu nào. Thông thường, một controller có thể bao gồm nhiều đường dẫn (routes) khác nhau, và mỗi route có thể thực thi một hành động chuyên biệt.
+
+Để định nghĩa một controller, chúng ta sử dụng các lớp (classes) kết hợp với **decorators**. Decorator sẽ liên kết các metadata cần thiết với lớp đó, cho phép framework tự động thiết lập bản đồ định tuyến.
+
+## Định tuyến (Routing)
+
+Trong ví dụ dưới đây, chúng ta sử dụng decorator `@Controller()`, điều kiện bắt buộc để định nghĩa một controller cơ bản. Chúng ta sẽ cấu hình tiền tố cho đường dẫn là `/users`. Việc nhóm các luồng xử lý có liên quan dưới một tiền tố chung giúp mã nguồn được sắp xếp hệ thống và giảm thiểu việc lặp lại mã nguồn.
+
+```typescript
+import { Controller, Get, Post } from './src';
+
+@Controller('/users')
+export class UsersController {
+  
+  @Get()
+  findAll() {
+    return 'Hành động này trả về toàn bộ danh sách users';
+  }
+
+  @Post('/create')
+  create() {
+    return 'Hành động này tạo mới một user';
+  }
+}
+```
+
+Method decorator `@Get()` nằm trước phương thức `findAll()` cho framework biết rằng cần tạo một endpoint hỗ trợ phương thức HTTP GET. Do chúng ta đã thiết lập tiền tố `/users` tại cấp controller, đường dẫn đầy đủ của endpoint này sẽ là `GET /users`.
+
+## Trích xuất Request Object
+
+Thường thì các phương thức xử lý (route handlers) cần truy cập thông tin chi tiết từ phía người dùng gửi tới. Framework cung cấp cơ chế chuẩn mực để lấy thông tin request thông qua các parameter decorators chuyên biệt.
+
+Bạn có thể trích xuất từng thuộc tính của HTTP request bằng các decorators như `@Body()`, `@Param()`, `@Query()`, và `@Headers()`.
+
+```typescript
+import { Controller, Get, Post, Body, Param, Query, Headers } from './src';
+
+@Controller('/users')
+export class UsersController {
+  
+  // GET /users/123 -> trích xuất tham số từ URL và gán vào biến id
+  @Get('/:id')
+  findOne(@Param('id') id: string) {
+    return { id };
+  }
+
+  // POST /users -> Lấy trực tiếp đối tượng JSON từ Body tải hình
+  @Post()
+  create(@Body() userDto: any) {
+    return { success: true, created: userDto };
+  }
+
+  // GET /users/search?q=john -> Lấy tham số từ URL query và header
+  @Get('/search')
+  search(
+    @Query('q') queryVal: string, 
+    @Headers('authorization') auth: string
+  ) {
+    return { searchTarget: queryVal, authorized: !!auth };
+  }
+}
+```
+
+### Request, Response, Session và File Uploads
+
+Bạn có thể tương tác sâu hơn với request bằng các decorator đặc biệt:
+
+- `@Req()`: Trích xuất đối tượng Request gốc từ ngữ cảnh HTTP.
+- `@Res()`: Trích xuất `context.set` của Elysia để điều khiển Header/StatusCode trực tiếp.
+- `@Session()`: Trích xuất payload của phiên đăng nhập thông qua Cookie (Yêu cầu `SessionModule`).
+- `@File(key)` / `@Files(key)`: Trích xuất file được upload (hỗ trợ `multipart/form-data`).
+
+```typescript
+import { Controller, Post, Req, Res, Session, File, Files } from './src';
+
+@Controller('/context')
+export class ContextController {
+  
+  // Trích xuất request và thao tác Response thay đổi status
+  @Get('/raw')
+  getRawRequest(@Req() req: Request, @Res() res: Record<string, any>) {
+    res.status = 201; // Thay đổi HTTP Status
+    res.headers['X-Custom-Header'] = 'Hello';
+    return { url: req.url };
+  }
+
+  // Tương tác trực tiếp với Session (Bảo mật qua Cookie HttpOnly)
+  @Get('/profile')
+  getProfile(@Session() session: any) {
+    if (!session) return { error: 'Not authenticated' };
+    return { user: session };
+  }
+
+  // Nhận dạng file upload đơn giản
+  @Post('/upload/avatar')
+  uploadAvatar(@File('avatar') avatar: File) {
+    return { fileSize: avatar.size, fileName: avatar.name };
+  }
+
+  // Nhận dạng danh sách files (Multiple Files)
+  @Post('/upload/documents')
+  uploadDocs(@Files('docs') docs: File[]) {
+    return { fileCount: docs.length };
+  }
+}
+```
+
+## Luồng Bất đồng bộ (Asynchronicity)
+
+Modern Javascript tận dụng tối đa khả năng xử lý bất đồng bộ. Vì vậy, mọi phương thức xử lý (route handlers) trong framework đều hỗ trợ cú pháp `async` một cách mặc định và có thể trả về một đối tượng `Promise`.
+
+```typescript
+@Get()
+async findAll(): Promise<any[]> {
+  const users = await this.db.findMany();
+  return users;
+}
+```

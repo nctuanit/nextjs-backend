@@ -1,0 +1,59 @@
+# Config Module (Môi Trường)
+
+`ConfigModule` cung cấp biện pháp nạp và xác nhận (Validate) tự động các biến môi trường (`.env` / `process.env`) một cách mạnh mẽ nhất.
+
+Mô hình tốt nhất là: Ứng dụng sẽ **chết ngay lập tức khi khởi động** nếu như thiếu các biến cực kỳ quan trọng (như `DATABASE_URL` hay `JWT_SECRET`). `ConfigModule` tích hợp thẳng engine `TypeBox` để đúc khuôn và bảo kê môi trường.
+
+## Đăng Ký Hệ Thống Môi Trường
+
+Tại module gốc của ứng dụng (thường là `AppModule`), sử dụng `.forRoot()` và khai báo bộ quy tắc `schema` chứa định nghĩa cho từng biến `.env`.
+
+```typescript
+// app.module.ts
+import { Module, ConfigModule } from 'next-js-backend';
+import { t } from 'elysia';
+
+@Module({
+  imports: [
+    ConfigModule.forRoot({
+      isGlobal: true,      // Cung cấp ConfigService ra toàn bộ hệ thống
+      schema: t.Object({
+        // Bắt buộc nhập trong file .env
+        DATABASE_URL: t.String(), 
+        // Cho qua, nếu không có lấy giá trị mặc định là 3000
+        PORT: t.Numeric({ default: 3000 }), 
+        // Typebox tự ép kiểu từ 'true' (string) sang true (boolean)
+        IS_PROD: t.Boolean({ default: false }),
+        // Thuộc tính bảo mật (Có thể ẩn/không lỗi nếu thiếu)
+        AWS_KEY: t.Optional(t.String())
+      })
+    })
+  ]
+})
+export class AppModule {}
+```
+
+> [!IMPORTANT]
+> Nếu bạn gắn cờ `isGlobal: true`, bạn sẽ không cần phải nạp lại khối `imports: [ConfigModule]` ở các Module con nữa. Dịch vụ Config sẽ có mặt ở mọi nơi trên toàn cục.
+
+## Tiến Hành Lấy Dữ Liệu
+
+Khi hệ thống đã vượt qua bài test lúc khởi động (tức `.env` đã hợp lệ và đủ phao), bạn có thể gọi biến đi muôn nơi thông qua constructor Injection:
+
+```typescript
+// users.service.ts
+import { Injectable, ConfigService } from 'next-js-backend';
+
+@Injectable()
+export class UsersService {
+  constructor(private configService: ConfigService) {}
+
+  connect() {
+    // TypeSafe: get() có thể cung cấp gợi ý dựa trên T
+    const dbUrl = this.configService.get<string>('DATABASE_URL');
+    const portId = this.configService.get<number>('PORT');
+    
+    console.log(`Connecting to ${dbUrl} at ${portId}`);
+  }
+}
+```

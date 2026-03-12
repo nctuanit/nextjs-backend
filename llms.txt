@@ -1,0 +1,49 @@
+# Project: Next.js Backend (Elysia Nest-like Framework)
+
+## Goal
+A highly performant, custom backend framework built on top of [Bun](https://bun.sh) and [ElysiaJS](https://elysiajs.com).
+It implements an architecture heavily inspired by **NestJS**, utilizing:
+- ECMAScript Decorators (`reflect-metadata`)
+- Dependency Injection Containers
+- Controllers mapped with Routing Metadata
+- Extensible Pipelines (Guards, Interceptors, Pipes)
+
+## Technology Stack
+- **Language**: TypeScript (`bun:test` enabled)
+- **Runtime**: Bun (v1.3.10+)
+- **Server Core**: ElysiaJS
+- **Validation**: `@sinclair/typebox` (native to Elysia) & `class-validator` + `class-transformer`
+- **Metadata**: `reflect-metadata`
+
+## Architectural Guidelines (For AI Agents)
+
+1. **Dependency Injection**: 
+   - Uses a custom generic `Container` class (`src/di/container.ts`).
+   - Supports `useClass`, `useValue`, `useFactory`, `useExisting` provider formats.
+   - Classes must be decorated with `@Injectable()` to be registered in the DIC.
+
+2. **Controllers & Routing**:
+   - Decorate classes with `@Controller('/path')`.
+   - Decorate methods with `@Get()`, `@Post()`, `@Put()`, `@Patch()`, `@Delete()`.
+   - Extract parameters via `@Param('id')`, `@Query()`, `@Body()`, `@Headers()`.
+   - Route mapping and Elysia app generation happens natively in `ElysiaFactory.create(ModuleClass)`.
+
+3. **Pipelines**:
+   - Application execution flow per endpoint: 
+     `Guards` -> `Interceptors (pre-hook)` -> `Pipes (Transform/Validate)` -> `Method Execution` -> `Interceptors (post-hook)`.
+   - Any thrown `HttpException` (e.g., `NotFoundException`, `ForbiddenException`) is caught by a global Elysia error handler inside `ElysiaFactory`.
+
+4. **Validation**:
+   - Prefer validating DTO instances using `@UsePipes(new ValidationPipe())` paired with `class-validator` decorators.
+   - Elysia TypeBox (`t.Object`, `t.String`, etc.) is supported gracefully inline. E.g., `@Body(t.Object({ name: t.String() }))`.
+
+5. **Style Guide**:
+   - Use ES Modules (`import/export`).
+   - Strict TypeScript configuration.
+   - Files are logically grouped in `src/decorators`, `src/di`, `src/exceptions`, `src/factory`, `src/interfaces.ts`.
+   - Use Object-Oriented paradigm for business logic (Classes, Instances, Interfaces).
+
+6. **Running the Application**:
+   - The entry point is bootstrap wrapped, similar to `NestFactory.create(AppModule)`.
+   - Start the server using `bun run index.ts` (or samples defined in `samples/package.json`).
+   - Use `bun test` for unit tests.

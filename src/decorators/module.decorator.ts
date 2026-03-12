@@ -1,0 +1,28 @@
+import 'reflect-metadata';
+
+import { MODULE_METADATA } from '../constants';
+
+export interface ModuleMetadata {
+  imports?: any[];
+  controllers?: any[];
+  providers?: any[];
+  exports?: any[];
+}
+
+/**
+ * Decorator that marks a class as a module.
+ *
+ * Modules are used by the framework to organize the application structure into scopes.
+ * Controllers and providers must be declared in a module to be discovered by the framework.
+ *
+ * @param metadata Module configuration metadata
+ */
+export function Module(metadata: ModuleMetadata): ClassDecorator {
+  return (target: object | Function) => {
+    for (const property in metadata) {
+      if (metadata.hasOwnProperty(property)) {
+        Reflect.defineMetadata(property, (metadata as any)[property], target);
+      }
+    }
+  };
+}

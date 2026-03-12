@@ -1,0 +1,67 @@
+# Interceptors (Chặn luồng)
+
+Một bộ chặn luồng (interceptor) là một lớp gắn kèm phía trên với decorator `@Injectable()` và bắt buộc phải tham chiếu giao thức interface của `NestInterceptor`.
+
+Interceptors được xây dưng bám sát vào các định luật triển khai kỹ thuật **AOP (Aspect-Oriented Programming - Lập trình Khía cạnh)**. Các phương pháp mô hình trên cung cấp cho người lập trình chuyên sâu các chức năng đặc quyền:
+- Phân bổ lại phần logic trước khi triển khai các luồng hoạt động **trước/sau** tác vụ kiểm soát bộ xử lý Controller Handler.
+- Nhào nặn dữ liệu và biến đổi cấu hình cấu trúc Output xuất dữ liệu.
+- Chuyển khai các tham số và chuyển đổi mô thức trình diện Ngoại Lệ (Exception).
+- Viết đè quy ước vận hành tuyến đường cơ sở (chẳng hạn ưu tiên khởi dẫn vào tài nguyên cục bộ cache như Memcached/Redis để rút ngắn cơ chế hoạt động mạng diện rộng).
+
+## Cơ Bản (Basics)
+
+Một Interceptors được yêu cầu triển khai định dạng thông điệp của interface `intercept()`. Phần này khởi tạo từ hai thành tố cơ sở truyền vào: Đối số phân hóa hệ sinh thái nội bộ `Context` và cấu hàm truyền tiếp `next()` gọi khối thực thể tham số (Handler) đằng sau để quyết toán thao tác.
+
+```typescript
+import { Injectable, NestInterceptor, Context } from './src';
+
+@Injectable()
+export class LoggingInterceptor implements NestInterceptor {
+  async intercept(context: Context, next: () => Promise<unknown>) {
+    console.log('Bộ chặn thực thi báo danh...');
+
+    const now = Date.now();
+    // Vận hành đánh gọi vào đường dẫn của hàm chuyên trách.
+    const result = await next();
+    
+    console.log(`Thông tuyến báo kết quả thời gian: ${Date.now() - now}ms`);
+    return result; 
+  }
+}
+```
+
+## Ánh Xạ Biến Dổi Chu trình Mạng (Response Mapping)
+
+Bộ điều phối Interceptors giải quyết các bài toán dữ liệu (stream manipulators) hiệu năng thông qua sự tùy chỉnh luồng phản ứng API mà trình khởi tạo đẩy ra. Chúng ta sẽ cùng áp dụng thực tiễn bọc hệ Response Payload:
+
+```typescript
+import { Injectable, NestInterceptor, Context } from './src';
+
+@Injectable()
+export class TransformInterceptor implements NestInterceptor {
+  async intercept(context: Context, next: () => Promise<unknown>) {
+    const data = await next();
+    
+    // Đóng gói đối tượng phản hồi bằng thuộc tính data nhằm thiết lập tiêu chuẩn chuẩn tắc hóa API Array Object
+    return { data };
+  }
+}
+```
+
+## Nạp Biến Phương Sai Luồng Mạng (Binding Interceptors)
+
+Khái quát cũng giống tham số điều phối với Guards, kỹ thuật Interceptor áp dụng theo cú pháp chuyên trách nhúng cờ `@UseInterceptors()`.
+
+```typescript
+import { Controller, Get, UseInterceptors } from './src';
+import { LoggingInterceptor } from './logging.interceptor';
+
+@Controller()
+@UseInterceptors(LoggingInterceptor)
+export class CatsController {
+  @Get()
+  findAll() {
+    return [{ id: 1, name: 'Mèo con' }];
+  }
+}
+```

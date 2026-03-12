@@ -1,0 +1,119 @@
+# Providers & Dependency Injection
+
+Providers là một khái niệm cơ bản và cốt lõi nhất của kiến trúc nền tảng. Phần lớn các lớp (classes) cơ sở đều được phân loại là một dạng provider – bao gồm các services, repositories, factories, helpers, v.v.
+
+Ý tưởng chủ đạo của provider là khả năng **tiêm (inject)** các thành phần phụ thuộc (dependencies) lẫn nhau. Nói cách khác, các đối tượng (objects) có thể tự động liên kết thành các mối quan hệ phức tạp. Hệ thống **IoC Container (Inversion of Control)** của framework sẽ tự động quản lý và giải quyết toàn bộ quy trình thiết lập kết nối (wiring) này trong quá trình runtime.
+
+## Định nghĩa Services
+
+Hãy bắt đầu bằng việc tạo một `UsersService` cơ bản. Dịch vụ (service) này sẽ đảm nhận trách nhiệm lưu trữ và truy xuất dữ liệu, cung cấp các khối tác vụ xử lý cho `UsersController` sử dụng. Do đó, nó là một ứng cử viên điển hình cho một provider.
+
+```typescript
+import { Injectable } from './src';
+
+export interface User {
+  name: string;
+  age: number;
+}
+
+@Injectable()
+export class UsersService {
+  private readonly users: User[] = [];
+
+  create(user: User) {
+    this.users.push(user);
+  }
+
+  findAll(): User[] {
+    return this.users;
+  }
+}
+```
+
+Decorator `@Injectable()` được gắn vào đầu lớp khai báo thêm các siêu dữ liệu (metadata), cho biết hệ thống IoC Container rằng lớp `UsersService` này có thể nằm dưới sự quản lý vòng đời (lifecycle) của framework.
+
+## Tiêm Phụ Thuộc (Dependency Injection)
+
+Toàn bộ động cơ hoạt động của framework ứng dụng Design Pattern mạnh mẽ mang tên **Dependency Injection** (Tiêm phụ thuộc).
+
+Trong ví dụ dưới đây, `UsersService` được tự động khởi tạo và kết nối vào Controller thông qua hàm khởi tạo `constructor`. Sử dụng khả năng phân tích tham số từ Typescript, framework tự động đánh giá kiểu dữ liệu (type resolution) và cung cấp chính xác instance của hệ thống nội bộ phụ thuộc.
+
+```typescript
+import { Controller, Get, Post, Body } from './src';
+import { UsersService, User } from './users.service';
+
+@Controller('/users')
+export class UsersController {
+  // Framework sẽ tự tạo một phiên bản của UsersService và truyền nó vào đây!
+  constructor(private usersService: UsersService) {}
+
+  @Post()
+  async create(@Body() user: User) {
+    this.usersService.create(user);
+  }
+
+  @Get()
+  async findAll(): Promise<User[]> {
+    return this.usersService.findAll();
+  }
+}
+```
+
+## Khởi tạo Custom Providers
+
+Sẽ có lúc cấu hình mặc định (sử dụng class gốc làm provider) không thực sự phù hợp. Bạn có thể cần thiết lập một hằng số cấu hình `SECRET_KEY`, hoặc yêu cầu khởi tạo bất đồng bộ (giải nén hoặc gọi API môi trường) trong lúc module tạo.
+
+Dự án có thể xử lý việc này bằng cách sử dụng các kiểu khởi tạo Custom Provider trong mảng tham số `@Module`.
+
+```typescript
+import { Module } from './src';
+
+@Module({
+  controllers: [UsersController],
+  providers: [
+    // 1. Phân phối Class tiêu chuẩn (useClass)
+    { provide: UsersService, useClass: UsersService },
+    
+    // 2. Value Provider (Hữu ích khi cấp biến cấu hình/hằng số dạng chuỗi)
+    { 
+      provide: 'API_KEY', 
+      useValue: 'my-super-secret-key' 
+    },
+    
+    // 3. Factory Provider (Được sử dụng khi khởi tạo cần Async hoặc hàm logic phức tạp)
+    { 
+      provide: 'DATABASE_CONNECTION', 
+      useFactory: async (apiKey: string) => {
+         // Chờ kết nối Database
+         const db = new DatabaseConnection(apiKey);
+         await db.connect();
+         return db; // Trả về Database instance để dùng chung trong toàn hệ thống
+      },
+      // Thông số này chỉ dẫn framework tiêm Value Provider đã khai báo 
+      // bên trên vào tham số `apiKey` ở constructor của hàm Factory
+      inject: ['API_KEY'] 
+    }
+  ]
+})
+export class AppModule {}
+```
+
+## Cơ chế Ép Kiểu Liên Kết (Constructor Target Injection)
+
+TypeScript không hỗ trợ việc liên kết kiểu trực tiếp cho các Custom Provider thiết lập bằng chuỗi (token), chẳng hạn như token `'API_KEY'` ở ví dụ trước đó. Vì thế, khung chương trình gặp khó khăn khi phát hiện mối liên hệ chuỗi trong hàm khởi tạo.
+
+Để phân giải (resolve) vấn đề này, bạn có thể áp dụng decorator `@Inject()` một cách linh hoạt như khai báo đè lên các tham số trong `constructor`. Điều này hướng dẫn rành mạch cho hệ thống cần tra lấy đối tượng thông qua `token` đã cung cấp.
+
+```typescript
+import { Controller } from './src';
+import { Inject } from './src/di/inject.decorator';
+
+@Controller('/users')
+export class UsersController {
+  constructor(
+    private usersService: UsersService,
+    // Chỉ đạo ép khung tiêm thẳng chuỗi đăng ký 'API_KEY' trong file Module gán qua biến apiKey
+    @Inject('API_KEY') private apiKey: string 
+  ) {}
+}
+```

@@ -1,0 +1,23 @@
+# Test directories & temp files
+src/**/__tests__
+tests/
+coverage/
+*.test.ts
+*.spec.ts
+
+# Documentation and Samples
+docs/
+samples/
+logo.svg
+logo.png
+
+# Configuration and Environment 
+.env
+.DS_Store
+
+# Git and Editor 
+.git
+.gitignore
+.vscode
+.gemini
+__pycache__
