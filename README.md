@@ -4,82 +4,82 @@
 
 # Next.js Backend (Elysia Nest-like Framework)
 
-A custom, high-performance Node/Bun backend framework built on top of **ElysiaJS**. It brings the familiar, highly-structured **NestJS architecture** (Decorators, Dependency Injection, Modules, Guards, Interceptors) to the lightning-fast Elysia ecosystem.
+Một framework backend mạnh mẽ, tốc độ cao dành cho Node/Bun, được xây dựng trên nền tảng **ElysiaJS**. Nó mang kiến trúc **NestJS** quen thuộc và có tính cấu trúc cao (Decorators, Dependency Injection, Modules, Guards, Interceptors) đến với hệ sinh thái Elysia siêu tốc.
 
-Designed meticulously to be **Serverless & Edge Ready**, dropping right into Next.js App Router API endpoints via `next-js-backend`.
-
----
-
-## 🚀 Features
-
-- **NestJS-like Architecture**: Structure your app with `@Controller`, `@Injectable`, and `@Module`.
-- **ElysiaJS Core**: Powered by ElysiaJS and Bun for maximum performance and TypeBox integration.
-- **Dependency Injection**: Full-featured IoC container supporting `useClass`, `useValue`, `useFactory`, and standard constructor injection.
-- **Pipeline Processing**: 
-  - **Guards** (`@UseGuards`): For authentication and authorization.
-  - **Interceptors** (`@UseInterceptors`): For request/response logging, transformation, and mutations.
-  - **Pipes** (`@UsePipes`): For data validation (supports built-in `ValidationPipe` with `class-validator`).
-  - **Filters** (`@UseFilters`, `@Catch`): Global & scoped Custom Exception Handlers.
-- **Session Management**: Built-in cookie-based `SessionModule` with Pluggable Storage (Redis/DB/Memory).
-- **Core Modules**: Built-in `ConfigModule` (Env validation), `JwtModule` (Authentication), and `LoggerService`.
-- **Next.js API Routing**: Drop-in compatible with `export const { GET, POST } = bootstrap()`
-- **File Uploads**: Native support for `@File()` / `@Files()` via `multipart/form-data`.
-- **OpenAPI / Swagger**: First-class support via native Elysia plugins.
+Được thiết kế tỉ mỉ để sẵn sàng cho **Serverless & Edge**, dễ dàng tích hợp trực tiếp vào Next.js App Router API endpoints thông qua `next-js-backend`.
 
 ---
 
-## 📦 Tech Stack
+## 🚀 Tính Năng (Features)
+
+- **Kiến trúc giống NestJS**: Cấu trúc ứng dụng của bạn với `@Controller`, `@Injectable`, và `@Module`.
+- **Lõi ElysiaJS**: Hoạt động dựa trên ElysiaJS và Bun, mang lại hiệu suất tối đa cùng với sự tích hợp TypeBox.
+- **Dependency Injection**: Vùng chứa IoC siêu mạnh với đầy đủ tính năng, hỗ trợ `useClass`, `useValue`, `useFactory` và injection qua constructor tiêu chuẩn.
+- **Quy trình xử lý (Pipeline)**:
+  - **Guards** (`@UseGuards`): Xác thực và phân quyền.
+  - **Interceptors** (`@UseInterceptors`): Ghi log request/response, thay đổi và biến đổi dữ liệu.
+  - **Pipes** (`@UsePipes`): Xác thực định dạng dữ liệu (hỗ trợ tích hợp sẵn `ValidationPipe` với `class-validator`).
+  - **Filters** (`@UseFilters`, `@Catch`): Quản lý luồng ngoại lệ (Custom Exception Handlers) toàn cục & theo cấp độ.
+- **Quản lý Phiên (Session)**: Module `SessionModule` tích hợp sẵn dùng Cookie với hệ thống lưu trữ có thể cắm ghép (Redis/DB/Memory).
+- **Core Modules**: Tích hợp sẵn `ConfigModule` (Xác thực tham số môi trường Env), `JwtModule` (Xác thực token) và `LoggerService`.
+- **Next.js API Routes**: Tương thích tức thì theo dạng drop-in với `export const { GET, POST } = bootstrap()`.
+- **Tải lên File (File Uploads)**: Hỗ trợ tự nhiên cho `@File()` / `@Files()` thông qua `multipart/form-data`.
+- **OpenAPI / Swagger**: Hỗ trợ xuất sắc nhất thông qua các plugin gốc của Elysia.
+
+---
+
+## 📦 Công Nghệ Sử Dụng (Tech Stack)
 
 - **Runtime**: [Bun](https://bun.sh/)
 - **Core Server**: [ElysiaJS](https://elysiajs.com/)
-- **Validation**: [TypeBox](https://github.com/sinclairzx81/typebox) (Native Elysia) & [class-validator](https://github.com/typestack/class-validator)
+- **Validation**: [TypeBox](https://github.com/sinclairzx81/typebox) (Elysia gốc) & [class-validator](https://github.com/typestack/class-validator)
 - **Metadata**: `reflect-metadata`
 
 ---
 
-## 🛠️ Getting Started
+## 🛠️ Bắt Đầu Cài Đặt (Getting Started)
 
-### Installation
+### Cài đặt thư viện
 
 ```bash
-# Clone the repository and install dependencies
-bun install
+# Clone repository hoặc chạy lệnh này trong dự án của bạn
+bun install next-js-backend
 ```
 
-### Running Samples
+### Chạy các Ứng Dụng Mẫu (Samples)
 
-We provide several sample applications in the `samples/` directory to help you get started:
+Chúng tôi cung cấp một số ứng dụng mẫu trong thư mục `samples/` để giúp bạn làm quen nhanh chóng:
 
 ```bash
-# Basic Controller & DI Pattern
+# Mô hình Controller & DI Cơ bản
 bun run start:basic
 
-# Data Validation with DTOs and class-validator
+# Xác thực định dạng DTO với class-validator
 bun run start:validation
 
-# Guards and Interceptors flow
+# Luồng Guards và Interceptors
 bun run start:guards
 
-# OpenAPI Swagger documentation (Listening on port 3003)
+# Tài liệu OpenAPI Swagger (Chạy trên cổng 3003)
 bun run start:swagger
 ```
 
 ---
 
-## 📖 Core Concepts
+## 📖 Các Khái Niệm Cốt Lõi (Core Concepts)
 
 ### 1. Controllers & Routing
 
-Controllers are responsible for handling incoming requests and returning responses. Use route decorators (`@Get`, `@Post`, etc.) and parameter decorators (`@Body`, `@Param`, `@Query`, `@Headers`, `@Req`, `@Res`, `@Session`, `@File`, `@Files`) to extract data.
+Controller có trách nhiệm nhận các request đổ về và trả response cho phía client. Sử dụng các khai báo (decorators) điều hướng định tuyến (`@Get`, `@Post`, v.v.) và khai báo trích xuất thông tin tham số (`@Body`, `@Param`, `@Query`, `@Headers`, `@Req`, `@Res`, `@Session`, `@File`, `@Files`) để lấy dữ liệu gửi lên một cách dễ dàng.
 
 ```typescript
-import { Controller, Get, Post, Body, Param } from './src';
+import { Controller, Get, Post, Body, Param } from "./src";
 
-@Controller('/users')
+@Controller("/users")
 export class UsersController {
   @Get()
   getAllUsers() {
-    return [{ id: 1, name: 'Alice' }];
+    return [{ id: 1, name: "Alice" }];
   }
 
   @Post()
@@ -89,21 +89,21 @@ export class UsersController {
 }
 ```
 
-### 2. Dependency Injection (Services)
+### 2. Dependency Injection (Tiêm Phụ Thuộc - Services)
 
-Mark services with `@Injectable()` so they can be injected into Controllers or other services.
+Hãy gắn nhãn `@Injectable()` vào các hàm Service để chúng có thể được inject (tiêm thông qua constructor) vào trong Controllers hoặc các service chức năng khác.
 
 ```typescript
-import { Injectable, Controller, Get } from './src';
+import { Injectable, Controller, Get } from "./src";
 
 @Injectable()
 export class UsersService {
   getUsers() {
-    return ['Alice', 'Bob'];
+    return ["Alice", "Bob"];
   }
 }
 
-@Controller('/users')
+@Controller("/users")
 export class UsersController {
   constructor(private readonly usersService: UsersService) {}
 
@@ -114,14 +114,15 @@ export class UsersController {
 }
 ```
 
-### 3. Validation Pipeline
+### 3. Pipeline Xác Thực (Validation)
 
-You can validate incoming data using either **TypeBox** (Elysia's native way) or **class-validator** (NestJS standard way).
+Bạn có thể tự do tiến hành validation định dạng dữ liệu đầu vào sử dụng **TypeBox** (Cách gốc của Elysia) hoặc **class-validator** (Cách tiêu chuẩn của NestJS).
 
-**Using Class Validator (DTOs):**
+**Sử Dụng Class Validator (Định dạng DTO):**
+
 ```typescript
-import { IsString, IsEmail } from 'class-validator';
-import { Body, Post, Controller, UsePipes, ValidationPipe } from './src';
+import { IsString, IsEmail } from "class-validator";
+import { Body, Post, Controller, UsePipes, ValidationPipe } from "./src";
 
 class CreateUserDto {
   @IsString()
@@ -131,7 +132,7 @@ class CreateUserDto {
   email: string;
 }
 
-@Controller('/users')
+@Controller("/users")
 export class UsersController {
   @Post()
   @UsePipes(new ValidationPipe())
@@ -143,30 +144,31 @@ export class UsersController {
 
 ### 4. Guards & Interceptors
 
-**Guards** determine whether a request will be handled by the route handler.
-**Interceptors** bind extra logic before / after method execution.
+**Guards** sẽ quét và xác định xem Request có quyền được đi tiếp vào Route Handler (tức các Controller) hay bị bắt dừng lại.
+**Interceptors** có thể gắn bổ sung logic ở trước / và sau sự kiện thực thi Route Methods.
 
 ```typescript
-import { CanActivate, Context, NextInterceptor } from './src/interfaces';
+import { CanActivate, Context, NextInterceptor } from "./src/interfaces";
 
 export class AuthGuard implements CanActivate {
   async canActivate(context: Context): Promise<boolean> {
-    const token = context.request.headers.get('authorization');
-    return token === 'Bearer secret';
+    const token = context.request.headers.get("authorization");
+    return token === "Bearer secret";
   }
 }
 
 export class LoggingInterceptor implements NextInterceptor {
   async intercept(context: Context, next: () => Promise<unknown>) {
-    console.log('Before execution...');
+    console.log("Before execution...");
     const result = await next();
-    console.log('After execution...');
+    console.log("After execution...");
     return result;
   }
 }
 ```
 
-Apply them using decorators:
+Sử dụng các lớp này trực tiếp bằng các `@Use` (decorators):
+
 ```typescript
 @UseGuards(AuthGuard)
 @UseInterceptors(LoggingInterceptor)
@@ -174,14 +176,18 @@ Apply them using decorators:
 getSecureData() { ... }
 ```
 
-```
+### 5. Exception Filters (Xử Lý Lỗi)
 
-### 5. Exception Filters (Error Handling)
-
-Take complete control over the Error/Response lifecycle. Catch unexpected `Error` instances directly on Route bounds just like NestJS.
+Giành quyền làm chủ toàn diện vòng đời Lỗi / Response. Bắt các ngoại lệ `Error` đột xuất trực tiếp trên cấp bậc Route hoàn toàn giống hệt NextJS.
 
 ```typescript
-import { Catch, ExceptionFilter, UseFilters, Controller, Get } from 'next-js-backend';
+import {
+  Catch,
+  ExceptionFilter,
+  UseFilters,
+  Controller,
+  Get,
+} from "next-js-backend";
 
 class CustomError extends Error {}
 
@@ -191,30 +197,33 @@ export class MyExceptionFilter implements ExceptionFilter {
     context.set.status = 503;
     return {
       message: "Internal Logic Overridden",
-      errorDetails: exception.message
-    }
+      errorDetails: exception.message,
+    };
   }
 }
 
-@Controller('/users')
+@Controller("/users")
 export class UsersController {
   @Get()
   @UseFilters(MyExceptionFilter)
-  crash() { throw new CustomError("Oh no!"); }
+  crash() {
+    throw new CustomError("Oh no!");
+  }
 }
 ```
 
-### 6. Bootstrapping & Next.js App Router Integration
+### 6. Bootstrapping & Tích Hợp Next.js App Router
 
-Assemble your application using `@Module` and start it with `ElysiaFactory`. You can extract the fetch handler `app.handle` to instantly plug into Next.js Edge/Node API Routes.
+Tổ hợp và gộp ứng dụng của bạn lại thông qua hệ thống `@Module` và khởi động (bootstrap) nó bằng hàm thư viện `ElysiaFactory`. Bạn có thể trích xuất ra một fetch handler tên là `app.handle` để gắn trực tiếp và chạy Native ngay lập tức trên các routes của Next.js Edge / API.
 
-**For Standalone Server (index.ts):**
+**Cho Môi trường Máy Chủ Độc Lập (Standalone JS Server):**
+
 ```typescript
-import { Module, ElysiaFactory } from './src';
+import { Module, ElysiaFactory } from "./src";
 
 @Module({
   controllers: [UsersController],
-  providers: [UsersService]
+  providers: [UsersService],
 })
 class AppModule {}
 
@@ -227,24 +236,37 @@ async function bootstrap() {
 bootstrap();
 ```
 
-**For Next.js App Router (app/api/[...slug]/route.ts):**
+**Cho Môi trường Next.js App Router (app/api/[...slug]/route.ts):**
+
 ```typescript
-const initApp = async () => {
-  const app = await ElysiaFactory.create(AppModule, { globalPrefix: '/api' });
-  return app.handle; // Return Next.js compatible standard Web Request handler
+import { ElysiaFactory } from "next-js-backend";
+import { AppModule } from "./app.module";
+
+// B1: Khởi tạo Ứng dụng gốc dạng Promise (Chỉ chạy 1 lần để tối ưu Cold-Start)
+const appPromise = ElysiaFactory.create(AppModule, { globalPrefix: "/api" });
+
+// B2: Tạo một hàm nhận Request đến từ phía Next.js và chuyển xuống cho Framework xử lý
+const handler = async (req: Request) => {
+  const app = await appPromise;
+  return app.handle(req); // Trả về dạng Web Standard Response chuẩn của trình duyệt
 };
 
-export const GET = initApp();
-export const POST = initApp();
-export const PUT = initApp();
-export const DELETE = initApp();
+// B3: Đẩy hàm handler này ra cho tất cả các phương thức HTTP
+export { 
+  handler as GET, 
+  handler as POST, 
+  handler as PUT, 
+  handler as DELETE,
+  handler as PATCH 
+};
 ```
 
-### 7. Built-in Modules (Enterprise Features)
+### 7. Các Module Tích Hợp Sẵn (Enterprise Features)
 
-The framework ships with powerful internal modules to bootstrap applications securely and efficiently:
+Framework này cung cấp sẵn cho bạn các Modules nội bộ, tiện lợi và vô cùng bảo mật để chạy nhanh dự án khi bootstrap ứng dụng:
 
-**ConfigModule (Environment Validation):**
+**ConfigModule (Xác thực thông số môi trường - Environment):**
+
 ```typescript
 import { ConfigModule } from './src';
 import { t } from 'elysia';
@@ -263,75 +285,87 @@ import { t } from 'elysia';
 })
 ```
 
-**JwtModule, AuthGuard & PasswordService (Hashing):**
+**JwtModule, AuthGuard & PasswordService (Mã hóa mật khẩu):**
+
 ```typescript
-import { JwtModule, AuthGuard, PasswordService, UseGuards, Controller, Get } from './src';
+import {
+  JwtModule,
+  AuthGuard,
+  PasswordService,
+  UseGuards,
+  Controller,
+  Get,
+} from "./src";
 
 @Module({
-  imports: [
-    JwtModule.register({ secret: 'my-super-secret', expiresIn: '1h' })
-  ],
-  providers: [PasswordService]
+  imports: [JwtModule.register({ secret: "my-super-secret", expiresIn: "1h" })],
+  providers: [PasswordService],
 })
 class AuthModule {}
 
-@Controller('/profile')
+@Controller("/profile")
 @UseGuards(AuthGuard)
 export class ProfileController {
   constructor(private password: PasswordService) {}
 
-  @Get('/me')
-  async getSecretData() { 
-    const hash = await this.password.hash("mypassword", { algorithm: 'argon2id' });
-    return { status: "Secure data", hash }; 
+  @Get("/me")
+  async getSecretData() {
+    const hash = await this.password.hash("mypassword", {
+      algorithm: "argon2id",
+    });
+    return { status: "Secure data", hash };
   }
 }
 ```
-**SessionModule (Cookie Based Secure Storage):**
+
+**SessionModule (Giải pháp lưu trữ Cookie bảo mật cao):**
+
 ```typescript
-import { SessionModule, Controller, Get, Session } from './src';
+import { SessionModule, Controller, Get, Session } from "./src";
 
 @Module({
   imports: [
     SessionModule.register({
-      secret: 'super-secret', // Signs the Cookie
-      cookieName: 'sid',
-      ttl: 86400 // 1 day expiration
-    })
-  ]
+      secret: "super-secret", // Signs the Cookie
+      cookieName: "sid",
+      ttl: 86400, // 1 day expiration
+    }),
+  ],
 })
 class WebAppModule {}
 
-@Controller('/profile')
+@Controller("/profile")
 export class ProfileController {
-  @Get('/me')
-  getProfile(@Session() session: any) {
+  @Get("/me")
+  getProfile(@Session() session: SessionData) {
     return session || { message: "Not logged in via cookie!" };
   }
 }
 ```
-**Built-in LoggerService:**
-```typescript
-import { Logger } from './src';
 
-const logger = new Logger('MyContext');
-logger.log('Standard log message');
-logger.error('Error occurred', error.stack);
-logger.warn('Warning log');
+**Built-in LoggerService (Ghi Log Hệ Thống):**
+
+```typescript
+import { Logger } from "./src";
+
+const logger = new Logger("MyContext");
+logger.log("Standard log message");
+logger.error("Error occurred", error.stack);
+logger.warn("Warning log");
 ```
 
-## 🌍 Global Type Augmentation
+## 🌍 Mở Rộng Type Toàn Cục (Global Type Augmentation)
 
-To achieve maximum type safety when using `@Session()` or custom guards, the framework exposes global interfaces that you can augment in your own `.d.ts` files (e.g., `globals.d.ts` or `next-env.d.ts`).
+Để lấy được tối đa sự an toàn Typescript (Type safety) khi sử dụng các phương pháp lấy biến động `@Session()` hay xử lý trong custom Guards, framework bóc tách các Types chuẩn bị sẵn (mở) Global interfaces cho bạn can thiệp từ `.d.ts` (ví dụ, chèn code vào file `globals.d.ts` hoặc `next-env.d.ts` của repository bạn).
 
 ```typescript
 // types.d.ts
-import 'next-js-backend';
+import "next-js-backend";
 
-declare module 'next-js-backend' {
+declare module "next-js-backend" {
   interface SessionData {
     userId: string;
-    role: 'admin' | 'user';
+    role: "admin" | "user";
     preferences: { theme: string };
   }
 
@@ -343,13 +377,13 @@ declare module 'next-js-backend' {
 }
 ```
 
-Now, whenever you inject `@Session() session`, your IDE will perfectly auto-complete `session.role` and `session.userId`!
+Và giờ đây, bất kì lúc nào bạn tiến hành dùng decorater `@Session() session`, Trình soạn thảo IDE của bạn đều sẽ gợi ý lệnh (auto-complete) rất hoàn hảo như thuộc tính `session.role` hay `session.userId`!
 
 ---
 
-## 🧪 Testing
+## 🧪 Testing (Chạy Thử Nghiệm)
 
-We use Bun's native test runner (`bun:test`). Tests are located alongside their respective source files in `__tests__` directories.
+Chúng tôi sử dụng môi trường test trực tiếp thông qua runner của Bun (`bun:test`). Tất cả files cấu hình bài test nghiệm thu thư mục nguồn (source) đều chứa bên trong thư mục `__tests__` đi liền cạnh.
 
 ```bash
 bun test
