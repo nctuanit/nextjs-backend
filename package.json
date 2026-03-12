@@ -13,7 +13,7 @@
     },
     "./*": "./*"
   },
-  "description": "A high-performance NestJS-like backend framework for Bun and Next.js Edge, powered by Elysia.",
+  "description": "A high-performance NestJS-like backend library for Bun and Next.js Edge, powered by Elysia.",
   "author": "Tuan Nguyen",
   "license": "MIT",
   "keywords": [
@@ -21,7 +21,7 @@
     "nestjs",
     "bun",
     "nextjs",
-    "framework",
+    "library",
     "edge",
     "decorators",
     "dependency-injection"

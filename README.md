@@ -2,9 +2,9 @@
   <img src="docs/src/assets/logo.png" width="300" alt="Next.js Backend Logo" />
 </p>
 
-# Next.js Backend (Elysia Nest-like Framework)
+# Next.js Backend (Elysia Nest-like Library)
 
-Một framework backend mạnh mẽ, tốc độ cao dành cho Node/Bun, được xây dựng trên nền tảng **ElysiaJS**. Nó mang kiến trúc **NestJS** quen thuộc và có tính cấu trúc cao (Decorators, Dependency Injection, Modules, Guards, Interceptors) đến với hệ sinh thái Elysia siêu tốc.
+Một thư viện backend mạnh mẽ, tốc độ cao dành cho Node/Bun, được xây dựng trên nền tảng **ElysiaJS**. Nó mang kiến trúc **NestJS** quen thuộc và có tính cấu trúc cao (Decorators, Dependency Injection, Modules, Guards, Interceptors) đến với hệ sinh thái Elysia siêu tốc.
 
 Được thiết kế tỉ mỉ để sẵn sàng cho **Serverless & Edge**, dễ dàng tích hợp trực tiếp vào Next.js App Router API endpoints thông qua `next-js-backend`.
 
@@ -73,7 +73,7 @@ bun run start:swagger
 Controller có trách nhiệm nhận các request đổ về và trả response cho phía client. Sử dụng các khai báo (decorators) điều hướng định tuyến (`@Get`, `@Post`, v.v.) và khai báo trích xuất thông tin tham số (`@Body`, `@Param`, `@Query`, `@Headers`, `@Req`, `@Res`, `@Session`, `@File`, `@Files`) để lấy dữ liệu gửi lên một cách dễ dàng.
 
 ```typescript
-import { Controller, Get, Post, Body, Param } from "./src";
+import { Controller, Get, Post, Body, Param } from "next-js-backend";
 
 @Controller("/users")
 export class UsersController {
@@ -94,7 +94,7 @@ export class UsersController {
 Hãy gắn nhãn `@Injectable()` vào các hàm Service để chúng có thể được inject (tiêm thông qua constructor) vào trong Controllers hoặc các service chức năng khác.
 
 ```typescript
-import { Injectable, Controller, Get } from "./src";
+import { Injectable, Controller, Get } from "next-js-backend";
 
 @Injectable()
 export class UsersService {
@@ -120,9 +120,9 @@ Bạn có thể tự do tiến hành validation định dạng dữ liệu đầ
 
 **Sử Dụng Class Validator (Định dạng DTO):**
 
-```typescript
+````typescript
 import { IsString, IsEmail } from "class-validator";
-import { Body, Post, Controller, UsePipes, ValidationPipe } from "./src";
+import { Body, Post, Controller, UsePipes, ValidationPipe } from "next-js-backend";
 
 class CreateUserDto {
   @IsString()
@@ -140,7 +140,7 @@ export class UsersController {
     return dto;
   }
 }
-```
+```ư
 
 ### 4. Guards & Interceptors
 
@@ -148,7 +148,7 @@ export class UsersController {
 **Interceptors** có thể gắn bổ sung logic ở trước / và sau sự kiện thực thi Route Methods.
 
 ```typescript
-import { CanActivate, Context, NextInterceptor } from "./src/interfaces";
+import { CanActivate, Context, NextInterceptor } from "next-js-backend";
 
 export class AuthGuard implements CanActivate {
   async canActivate(context: Context): Promise<boolean> {
@@ -165,7 +165,7 @@ export class LoggingInterceptor implements NextInterceptor {
     return result;
   }
 }
-```
+````
 
 Sử dụng các lớp này trực tiếp bằng các `@Use` (decorators):
 
@@ -219,7 +219,7 @@ Tổ hợp và gộp ứng dụng của bạn lại thông qua hệ thống `@Mo
 **Cho Môi trường Máy Chủ Độc Lập (Standalone JS Server):**
 
 ```typescript
-import { Module, ElysiaFactory } from "./src";
+import { Module, ElysiaFactory } from "next-js-backend";
 
 @Module({
   controllers: [UsersController],
@@ -242,33 +242,22 @@ bootstrap();
 import { ElysiaFactory } from "next-js-backend";
 import { AppModule } from "./app.module";
 
-// B1: Khởi tạo Ứng dụng gốc dạng Promise (Chỉ chạy 1 lần để tối ưu Cold-Start)
-const appPromise = ElysiaFactory.create(AppModule, { globalPrefix: "/api" });
-
-// B2: Tạo một hàm nhận Request đến từ phía Next.js và chuyển xuống cho Framework xử lý
-const handler = async (req: Request) => {
-  const app = await appPromise;
-  return app.handle(req); // Trả về dạng Web Standard Response chuẩn của trình duyệt
-};
-
-// B3: Đẩy hàm handler này ra cho tất cả các phương thức HTTP
-export { 
-  handler as GET, 
-  handler as POST, 
-  handler as PUT, 
-  handler as DELETE,
-  handler as PATCH 
-};
+// Hàm hỗ trợ "createNextJsHandlers" giải quyết tự động Singleton Pattern
+// và tối ưu Cold-Start cho ứng dụng Next.js Edge/Serverless.
+export const { GET, POST, PUT, PATCH, DELETE } =
+  ElysiaFactory.createNextJsHandlers(AppModule, {
+    globalPrefix: "/api",
+  });
 ```
 
 ### 7. Các Module Tích Hợp Sẵn (Enterprise Features)
 
-Framework này cung cấp sẵn cho bạn các Modules nội bộ, tiện lợi và vô cùng bảo mật để chạy nhanh dự án khi bootstrap ứng dụng:
+Thư viện này cung cấp sẵn cho bạn các Modules nội bộ, tiện lợi và vô cùng bảo mật để chạy nhanh dự án khi bootstrap ứng dụng:
 
 **ConfigModule (Xác thực thông số môi trường - Environment):**
 
 ```typescript
-import { ConfigModule } from './src';
+import { ConfigModule } from 'next-js-backend';
 import { t } from 'elysia';
 
 @Module({
@@ -295,7 +284,7 @@ import {
   UseGuards,
   Controller,
   Get,
-} from "./src";
+} from "next-js-backend";
 
 @Module({
   imports: [JwtModule.register({ secret: "my-super-secret", expiresIn: "1h" })],
@@ -321,7 +310,7 @@ export class ProfileController {
 **SessionModule (Giải pháp lưu trữ Cookie bảo mật cao):**
 
 ```typescript
-import { SessionModule, Controller, Get, Session } from "./src";
+import { SessionModule, Controller, Get, Session } from "next-js-backend";
 
 @Module({
   imports: [
@@ -346,7 +335,7 @@ export class ProfileController {
 **Built-in LoggerService (Ghi Log Hệ Thống):**
 
 ```typescript
-import { Logger } from "./src";
+import { Logger } from "next-js-backend";
 
 const logger = new Logger("MyContext");
 logger.log("Standard log message");
@@ -356,7 +345,7 @@ logger.warn("Warning log");
 
 ## 🌍 Mở Rộng Type Toàn Cục (Global Type Augmentation)
 
-Để lấy được tối đa sự an toàn Typescript (Type safety) khi sử dụng các phương pháp lấy biến động `@Session()` hay xử lý trong custom Guards, framework bóc tách các Types chuẩn bị sẵn (mở) Global interfaces cho bạn can thiệp từ `.d.ts` (ví dụ, chèn code vào file `globals.d.ts` hoặc `next-env.d.ts` của repository bạn).
+Để lấy được tối đa sự an toàn Typescript (Type safety) khi sử dụng các phương pháp lấy biến động `@Session()` hay xử lý trong custom Guards, thư viện bóc tách các Types chuẩn bị sẵn (mở) Global interfaces cho bạn can thiệp từ `.d.ts` (ví dụ, chèn code vào file `globals.d.ts` hoặc `next-env.d.ts` của repository bạn).
 
 ```typescript
 // types.d.ts
@@ -388,3 +377,21 @@ Chúng tôi sử dụng môi trường test trực tiếp thông qua runner củ
 ```bash
 bun test
 ```
+
+---
+
+## 💖 Lời Cảm Ơn (Acknowledgements)
+
+Đặc biệt gửi lời cảm ơn tới **Antigravity** (Google DeepMind) đã đồng hành, hỗ trợ kỹ thuật và giúp tôi hiện thực hóa toàn bộ ý tưởng của Thư viện này từ những dòng code đầu tiên. Cùng với sức mạnh của tinh thần pair-programming, **Next.js Backend** đã ra đời!
+
+---
+
+## 📜 Giấy Phép (License)
+
+**MIT License**
+
+Copyright (c) 2026 Tuan Nguyen
+
+Permission is hereby granted, free of charge, to any person obtaining a copy
+of this software and associated documentation files (the "Software"), to deal
+in the Software without restriction, including without limitation the rights
