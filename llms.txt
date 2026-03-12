@@ -1,12 +1,13 @@
-# Project: Next.js Backend (Elysia Nest-like Framework)
+# Project: Next.js Backend (Elysia Nest-like Library)
 
 ## Goal
-A highly performant, custom backend framework built on top of [Bun](https://bun.sh) and [ElysiaJS](https://elysiajs.com).
+A highly performant, custom backend library built on top of [Bun](https://bun.sh) and [ElysiaJS](https://elysiajs.com).
 It implements an architecture heavily inspired by **NestJS**, utilizing:
 - ECMAScript Decorators (`reflect-metadata`)
-- Dependency Injection Containers
+- Dependency Injection Containers (IoC)
 - Controllers mapped with Routing Metadata
-- Extensible Pipelines (Guards, Interceptors, Pipes)
+- Extensible Pipelines (Guards, Interceptors, Pipes, Exception Filters)
+- Drop-in compatibility with Next.js App Router API endpoints
 
 ## Technology Stack
 - **Language**: TypeScript (`bun:test` enabled)
@@ -17,33 +18,42 @@ It implements an architecture heavily inspired by **NestJS**, utilizing:
 
 ## Architectural Guidelines (For AI Agents)
 
+When interacting with this codebase, adopt the following structural paradigms:
+
 1. **Dependency Injection**: 
    - Uses a custom generic `Container` class (`src/di/container.ts`).
    - Supports `useClass`, `useValue`, `useFactory`, `useExisting` provider formats.
-   - Classes must be decorated with `@Injectable()` to be registered in the DIC.
+   - Classes MUST be decorated with `@Injectable()` to be registered in the IoC Container.
+   - Modules collect providers, controllers, and imports using `@Module()`.
 
 2. **Controllers & Routing**:
    - Decorate classes with `@Controller('/path')`.
    - Decorate methods with `@Get()`, `@Post()`, `@Put()`, `@Patch()`, `@Delete()`.
-   - Extract parameters via `@Param('id')`, `@Query()`, `@Body()`, `@Headers()`.
+   - Extract parameters via `@Param('id')`, `@Query()`, `@Body()`, `@Headers()`, `@Req()`, `@Res()`, `@Session()`.
+   - File uploads are explicitly handled via `@File('fieldname')` and `@Files('fieldname')` decorators for `multipart/form-data`.
    - Route mapping and Elysia app generation happens natively in `ElysiaFactory.create(ModuleClass)`.
 
-3. **Pipelines**:
+3. **Pipelines (Execution Order)**:
    - Application execution flow per endpoint: 
      `Guards` -> `Interceptors (pre-hook)` -> `Pipes (Transform/Validate)` -> `Method Execution` -> `Interceptors (post-hook)`.
-   - Any thrown `HttpException` (e.g., `NotFoundException`, `ForbiddenException`) is caught by a global Elysia error handler inside `ElysiaFactory`.
+   - Exception handling is controlled via `@UseFilters()` and `@Catch()`. Filters implement the `ExceptionFilter` interface.
 
 4. **Validation**:
    - Prefer validating DTO instances using `@UsePipes(new ValidationPipe())` paired with `class-validator` decorators.
    - Elysia TypeBox (`t.Object`, `t.String`, etc.) is supported gracefully inline. E.g., `@Body(t.Object({ name: t.String() }))`.
 
-5. **Style Guide**:
-   - Use ES Modules (`import/export`).
-   - Strict TypeScript configuration.
-   - Files are logically grouped in `src/decorators`, `src/di`, `src/exceptions`, `src/factory`, `src/interfaces.ts`.
-   - Use Object-Oriented paradigm for business logic (Classes, Instances, Interfaces).
+5. **Built-in Modules**:
+   - The framework has built in specific enterprise modules:
+     - `ConfigModule`: Validates `process.env` against a TypeBox schema.
+     - `JwtModule`: Generates and verifies JSON Web Tokens.
+     - `SessionModule`: Cookie-based session tracking with pluggable `SessionStore`.
+     - `LoggerService`: Context-aware logging utility.
+     - `PasswordService`: Bun native password hashing (bcrypt / argon2).
 
-6. **Running the Application**:
-   - The entry point is bootstrap wrapped, similar to `NestFactory.create(AppModule)`.
-   - Start the server using `bun run index.ts` (or samples defined in `samples/package.json`).
-   - Use `bun test` for unit tests.
+6. **Next.js Integration Rules**:
+   - To integrate into Next.js App Router (`app/api/.../route.ts`), do NOT manual handle Promises. Use the helper method natively:
+   - `export const { GET, POST, PUT, PATCH, DELETE } = ElysiaFactory.createNextJsHandlers(AppModule, { globalPrefix: '/api' })`
+
+7. **Extensibility & Type Augmentation**:
+   - AI Agents MUST utilize TypeScript declaration merging (`declare module 'next-js-backend'`) if modifying `SessionData` or `User` objects to retain strict Type safety across the module logic.
+   - Code style strongly favors ES Modules (`import`/`export`), Strict TS configs, and pure OOP.

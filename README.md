@@ -73,13 +73,18 @@ bun run start:swagger
 Controller có trách nhiệm nhận các request đổ về và trả response cho phía client. Sử dụng các khai báo (decorators) điều hướng định tuyến (`@Get`, `@Post`, v.v.) và khai báo trích xuất thông tin tham số (`@Body`, `@Param`, `@Query`, `@Headers`, `@Req`, `@Res`, `@Session`, `@File`, `@Files`) để lấy dữ liệu gửi lên một cách dễ dàng.
 
 ```typescript
-import { Controller, Get, Post, Body, Param } from "next-js-backend";
+import { Controller, Get, Post, Body, Param, Query, Headers } from "next-js-backend";
 
 @Controller("/users")
 export class UsersController {
   @Get()
-  getAllUsers() {
-    return [{ id: 1, name: "Alice" }];
+  getAllUsers(@Query('role') role?: string) {
+    return [{ id: 1, name: "Alice", role: role || "user" }];
+  }
+
+  @Get('/:id')
+  getUserById(@Param('id') userId: string, @Headers('authorization') token: string) {
+    return { id: userId, tokenProvided: !!token };
   }
 
   @Post()
@@ -140,7 +145,7 @@ export class UsersController {
     return dto;
   }
 }
-```ư
+```
 
 ### 4. Guards & Interceptors
 
