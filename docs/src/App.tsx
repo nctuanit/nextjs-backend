@@ -12,7 +12,7 @@ import {
 
 export function App() {
   return (
-    <BrowserRouter>
+    <BrowserRouter basename="/nextjs-backend">
       <Routes>
         <Route path="/" element={<DocsLayout />}>
           <Route index element={<IntroPage />} />
