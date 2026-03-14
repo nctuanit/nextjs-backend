@@ -27,6 +27,12 @@ export * from './src/session/session.service';
 export * from './src/session/session.store';
 export * from './src/cache/cache.module';
 export * from './src/cache/cache.interceptor';
+export * from './src/plugins/plugins.module';
+export * from './src/decorators/rate-limit.decorator';
+
+// Dev Mode & Profiling
+export * from './src/dev-mode/dev-mode.module';
+export * from './src/dev-mode/dev-mode.service';
 export * from './src/cache/cache.store';
 export * from './src/decorators/cache.decorator';
 export * from './src/decorators/websocket.decorator';

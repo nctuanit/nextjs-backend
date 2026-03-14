@@ -5,7 +5,9 @@ import {
   IntroPage, FirstStepsPage, NextjsIntegrationPage,
   ControllersPage, ProvidersPage, ModulesPage,
   GuardsPage, InterceptorsPage, PipesPage, ExceptionsPage,
-  OpenAPIPage, LoggerPage, ConfigModulePage, JwtAuthPage
+  OpenAPIPage, LoggerPage, ConfigModulePage, JwtAuthPage,
+  CacheModulePage, GlobalMiddlewarePage, WebSocketGatewayPage,
+  DevModePage
 } from "./pages";
 
 export function App() {
@@ -27,6 +29,10 @@ export function App() {
           <Route path="logger" element={<LoggerPage />} />
           <Route path="config-module" element={<ConfigModulePage />} />
           <Route path="jwt-auth" element={<JwtAuthPage />} />
+          <Route path="cache-module" element={<CacheModulePage />} />
+          <Route path="global-middleware" element={<GlobalMiddlewarePage />} />
+          <Route path="websocket-gateway" element={<WebSocketGatewayPage />} />
+          <Route path="dev-mode" element={<DevModePage />} />
           <Route path="*" element={<Navigate to="/" replace />} />
         </Route>
       </Routes>

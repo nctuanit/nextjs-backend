@@ -1,0 +1,84 @@
+# WebSocket Gateway
+
+Library hỗ trợ tính năng WebSocket thời gian thực thông qua Decorators quen thuộc như NestJS, nhưng được xử lý với tốc độ của Bun. `WebSocketGateway` giúp bạn dễ dàng lắng nghe và phản hồi các sự kiện WebSocket.
+
+Khả năng WebSocket trong `next-js-backend` được xây dựng dựa trên API WebSocket gốc của Bun và tương thích trực tiếp với hệ sinh thái Elysia.
+
+## Cài đặt cơ bản
+
+Để tạo một Gateway, sử dụng Decorator `@WebSocketGateway` và `@SubscribeMessage` để xử lý các sự kiện cụ thể.
+
+```typescript
+import { 
+  WebSocketGateway, 
+  SubscribeMessage, 
+  MessageBody, 
+  ConnectedSocket,
+  WebSocketServer
+} from 'next-js-backend';
+
+@WebSocketGateway({ path: '/chat' })
+export class ChatGateway {
+  @WebSocketServer()
+  server: any; // Server instance của Bun/Elysia cung cấp
+
+  @SubscribeMessage('message')
+  handleMessage(
+    @MessageBody() data: any, 
+    @ConnectedSocket() client: any
+  ) {
+    console.log('Received message:', data);
+    
+    // Gửi lại dữ liệu cho client đã gửi (echo)
+    client.send(JSON.stringify({ event: 'reply', data: 'Server received: ' + data }));
+  }
+}
+```
+
+Trong ví dụ trên:
+- `@WebSocketGateway({ path: '/chat' })`: Định nghĩa namespace / path cho kết nối WebSocket.
+- `@SubscribeMessage('message')`: Đăng ký lắng nghe sự kiện có tên là "message". Payload gửi từ client phải có dạng dạng `{"event": "message", "data": ...}`.
+- `@MessageBody()`: Trích xuất phần `data` từ payload của message.
+- `@ConnectedSocket()`: Lấy instance của client đang kết nối hiện tại để tiến hành tương tác trực tiếp (ví dụ `client.send(...)`).
+
+## Đăng ký Gateway
+
+Bạn phải đăng ký lớp Gateway vào trường `providers` của một Module để hệ thống Dependency Injection có thể khởi tạo và đính kèm nó vào server.
+
+```typescript
+import { Module } from 'next-js-backend';
+import { ChatGateway } from './chat.gateway';
+
+@Module({
+  providers: [ChatGateway], // Gateway là một provider
+})
+export class ChatModule {}
+```
+
+## Tương tác với Client
+
+Phía Client có thể sử dụng giao diện Native WebSocket tĩnh của trình duyệt. 
+
+Lưu ý rằng thông điệp phía client đẩy lên phải được định dạng chuẩn dưới chuỗi JSON với 2 khóa mặc định:
+- `event`: Tên sự kiện khớp với `@SubscribeMessage`.
+- `data`: Dữ liệu/payload gửi kèm (sẽ được trích xuất bằng `@MessageBody()`).
+
+```javascript
+// Phía ứng dụng Frontend
+const ws = new WebSocket('ws://localhost:3000/chat');
+
+ws.onopen = () => {
+  console.log('Connected to WebSocket');
+  
+  // Gửi một sự kiện có tên 'message' lên server
+  ws.send(JSON.stringify({
+    event: 'message',
+    data: 'Hello Server!'
+  }));
+};
+
+ws.onmessage = (event) => {
+  const response = JSON.parse(event.data);
+  console.log('Got response from server:', response);
+};
+```

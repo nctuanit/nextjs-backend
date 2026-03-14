@@ -24,6 +24,7 @@ const DOCS_NAVIGATION: NavGroup[] = [
   {
     title: "Pipelines & Handling",
     items: [
+      { title: "Global Middleware", path: "/global-middleware", icon: <Layers className="h-4 w-4" /> },
       { title: "Guards", path: "/guards", icon: <ShieldAlert className="h-4 w-4" /> },
       { title: "Interceptors", path: "/interceptors", icon: <ArrowLeftRight className="h-4 w-4" /> },
       { title: "Pipes", path: "/pipes", icon: <Filter className="h-4 w-4" /> },
@@ -33,7 +34,10 @@ const DOCS_NAVIGATION: NavGroup[] = [
   {
     title: "Extensions",
     items: [
+      { title: "Cache Module", path: "/cache-module", icon: <Box className="h-4 w-4" /> },
+      { title: "WebSocket Gateway", path: "/websocket-gateway", icon: <ArrowLeftRight className="h-4 w-4" /> },
       { title: "Logger Service", path: "/logger", icon: <Layers className="h-4 w-4" /> },
+      { title: "DevMode Profiler", path: "/dev-mode", icon: <MonitorPlay className="h-4 w-4" /> },
       { title: "Config Module", path: "/config-module", icon: <Box className="h-4 w-4" /> },
       { title: "JWT & Authentication", path: "/jwt-auth", icon: <Shield className="h-4 w-4" /> },
       { title: "OpenAPI (Swagger)", path: "/openapi", icon: <Globe className="h-4 w-4" /> },

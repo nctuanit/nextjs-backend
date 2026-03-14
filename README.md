@@ -361,6 +361,93 @@ logger.error("Error occurred", error.stack);
 logger.warn("Warning log");
 ```
 
+**CacheModule (Lưu trữ và phục hồi dữ liệu tốc độ cao):**
+
+```typescript
+import { CacheModule, Controller, Get, UseInterceptors, CacheInterceptor } from "next-js-backend";
+
+@Module({
+  imports: [
+    CacheModule.register({ ttl: 60, max: 100 }) // ttl bằng giây
+  ]
+})
+class AppModule {}
+
+@Controller("/products")
+@UseInterceptors(CacheInterceptor)
+export class ProductsController {
+  @Get()
+  getProducts() {
+    return { data: "This will be cached for 60 seconds" };
+  }
+}
+```
+
+**WebSocket Gateway (Giao tiếp Real-time):**
+
+```typescript
+import { WebSocketGateway, WebSocketServer, SubscribeMessage, MessageBody, ConnectedSocket } from "next-js-backend";
+
+@WebSocketGateway({ path: "/ws" })
+export class ChatGateway {
+  @WebSocketServer()
+  server: any;
+
+  @SubscribeMessage("message")
+  handleMessage(@MessageBody() data: any, @ConnectedSocket() client: any) {
+    // Phát sự kiện lại cho client
+    client.send(JSON.stringify({ event: "reply", data }));
+  }
+}
+```
+
+**Global Middleware (Phần mềm trung gian toàn cục):**
+
+```typescript
+import { Middleware, NestMiddleware, MiddlewareConsumer } from "next-js-backend";
+
+@Middleware()
+export class LoggerMiddleware implements NestMiddleware {
+  use(req: Request, res: Response, next: () => void) {
+    console.log(`Incoming request: ${req.url}`);
+    next();
+  }
+}
+
+// Đăng ký Middleware trong Module
+@Module({
+  controllers: [/* ... */]
+})
+export class AppModule {
+  configure(consumer: MiddlewareConsumer) {
+    consumer.apply(LoggerMiddleware).forRoutes('*');
+  }
+}
+```
+
+**DevMode Profiler (Thống kê và Cấu hình Môi trường Phát triển):**
+
+Request Profiler được nhúng nguyên bản sử dụng `onAfterResponse` scope của Elysia, cho phép bạn quan sát toàn bộ độ trễ (latency), body, mã lỗi (status) mà hiệu năng Server bị sụt giảm cực kì thấp.
+
+```typescript
+import { DevModeModule, ElysiaFactory } from "next-js-backend";
+
+@Module({
+  imports: [
+    DevModeModule.register({ 
+       enabled: process.env.NODE_NODE !== 'production', // Chỉ kích hoạt khi dev
+       maxHistory: 50 // Theo dõi 50 requests gần nhất
+    })
+  ]
+})
+export class AppModule {}
+
+// Sau khi khởi chạy server, NextJs Backend sẽ mở sẵn các endpoint dưới đây:
+// GET /dev/history  -> Lịch sử Requests (body, latency, status)
+// GET /dev/stats    -> Tổng số Requests, tỉ lệ lỗi (Error Ratio)
+// GET /dev/history/clear -> Xóa lịch sử
+```
+
 ## 🌍 Mở Rộng Type Toàn Cục (Global Type Augmentation)
 
 Để lấy được tối đa sự an toàn Typescript (Type safety) khi sử dụng các phương pháp lấy biến động `@Session()` hay xử lý trong custom Guards, thư viện bóc tách các Types chuẩn bị sẵn (mở) Global interfaces cho bạn can thiệp từ `.d.ts` (ví dụ, chèn code vào file `globals.d.ts` hoặc `next-env.d.ts` của repository bạn).

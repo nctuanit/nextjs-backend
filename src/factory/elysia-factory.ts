@@ -22,6 +22,13 @@ import { type Type, type Provider, type InjectionToken } from '../di/provider';
 import { Logger } from '../services/logger.service';
 import { SessionService } from '../session/session.service';
 import { SESSION_OPTIONS } from '../session/session.module';
+import { PLUGINS_CONFIG, type PluginsModuleOptions } from '../plugins/plugins.module';
+import { RATE_LIMIT_METADATA, type RateLimitOptions } from '../decorators/rate-limit.decorator';
+import { DEV_MODE_CONFIG, DevModeService, type DevModeConfig } from '../dev-mode/dev-mode.service';
+import { DevModeLoggerMiddleware } from '../dev-mode/dev-mode.middleware';
+import cors from '@elysiajs/cors';
+import { helmet } from 'elysia-helmet';
+import { rateLimit } from 'elysia-rate-limit';
 
 export interface FactoryOptions {
   globalPrefix?: string;
@@ -45,40 +52,7 @@ export class ElysiaFactory {
     console.log(`\x1b[36m${banner}\x1b[0m`);
     this.logger.log('Starting Next.js-Backend application...');
     
-    const app = new Elysia({ prefix: options?.globalPrefix });
-
-    // Global Middlewares (onRequest hook)
-    if (options?.globalMiddlewares && options.globalMiddlewares.length > 0) {
-      app.onRequest(async (context) => {
-        for (const middlewareClassOrInstance of options.globalMiddlewares!) {
-          // Resolve if it's a class
-          const middlewareInstance = (typeof middlewareClassOrInstance === 'function' && !('use' in middlewareClassOrInstance))
-            ? await globalContainer.resolve(middlewareClassOrInstance as Type<unknown>) as NestMiddleware
-            : middlewareClassOrInstance as NestMiddleware;
-            
-          await middlewareInstance.use(context.request, context.set, () => Promise.resolve());
-        }
-      });
-    }
-
-    // Global Error Handler
-    app.onError(({ error, set }) => {
-      console.error(error);
-      if (error instanceof HttpException) {
-        set.status = error.getStatus();
-        return error.getResponse();
-      }
-      
-      // Fallback
-      set.status = 500;
-      return {
-        message:
-          error instanceof Error
-            ? error.message
-            : (error as Record<string, unknown>)?.message || 'Internal server error',
-        statusCode: 500,
-      };
-    });
+    let app = new Elysia({ prefix: options?.globalPrefix });
 
     // Extract module metadata recursively
     const controllers: Type<unknown>[] = [];
@@ -136,6 +110,111 @@ export class ElysiaFactory {
        }
        await globalContainer.resolve(token);
     }
+
+    // Try to inject Global Plugins if PluginsModule is registered
+    try {
+      const pluginsConfig = await globalContainer.resolve(PLUGINS_CONFIG) as PluginsModuleOptions;
+      if (pluginsConfig) {
+        if (pluginsConfig.cors) {
+          app.use(cors(typeof pluginsConfig.cors === 'object' ? pluginsConfig.cors : undefined));
+          this.logger.log('CORS Plugin registered globally.');
+        }
+        if (pluginsConfig.helmet) {
+          app.use(helmet(typeof pluginsConfig.helmet === 'object' ? pluginsConfig.helmet : undefined));
+          this.logger.log('Helmet Security Plugin registered globally.');
+        }
+      }
+    } catch(e) { /* ignore if PluginsModule is not imported */ }
+    // Check if DevMode is active
+    let devModeActive = false;
+    try {
+      const devModeConfig = await globalContainer.resolve(DEV_MODE_CONFIG) as DevModeConfig;
+      if (devModeConfig && devModeConfig.enabled) {
+        devModeActive = true;
+        this.logger.log('Dev Mode Profiler is ACTIVE. Performance may be impacted.');
+        
+        // Inject profiler hooks via Elysia lifecycles instead of middleware to guarantee accurate timing and status observation
+        const devModeService = await globalContainer.resolve(DevModeService) as DevModeService;
+        
+        let reqStartTimes = new Map<string, number>();
+
+        app = app.onRequest(({ request }) => {
+            const reqId = crypto.randomUUID();
+            (request as any).reqId = reqId;
+            reqStartTimes.set(reqId, performance.now());
+        });
+        
+        app = app.onAfterResponse(({ request, set, body }) => {
+            // console.log('[DEV_MODE_HOOK] Fired for', request.method, request.url);
+            try {
+                const reqId = (request as any).reqId;
+                const start = reqId ? reqStartTimes.get(reqId) || performance.now() : performance.now();
+                if (reqId) reqStartTimes.delete(reqId);
+                const durationMs = performance.now() - start;
+                
+                const reqHeaders: Record<string, string> = {};
+                request.headers.forEach((v, k) => reqHeaders[k] = v);
+
+                const url = new URL(request.url);
+                
+                // Reconcile status
+                let status = set.status;
+                if (!status) status = 200;
+
+                const isError = typeof status === 'number' ? status >= 400 : parseInt(status as string) >= 400;
+
+                devModeService.recordRequest({
+                    id: reqId || crypto.randomUUID(),
+                    method: request.method,
+                    url: url.pathname,
+                    status: typeof status === 'number' ? status : parseInt(status as string) || 200,
+                    durationMs,
+                    timestamp: new Date(),
+                    headers: reqHeaders,
+                    query: Object.fromEntries(url.searchParams.entries()),
+                    body: body,
+                    error: isError ? 'Error observed by profiler' : undefined
+                });
+            } catch(hookError) {
+                console.error('[DEV_MODE_CRASH]', hookError);
+            }
+        }) as any;
+      }
+    } catch(e) { 
+        console.error('[DEV_MODE_INIT_ERROR]', e);
+    }
+    // Global Middlewares (onRequest hook)
+    if (options?.globalMiddlewares && options.globalMiddlewares.length > 0) {
+      app.onRequest(async (context) => {
+        for (const middlewareClassOrInstance of options.globalMiddlewares!) {
+          // Resolve if it's a class
+          const middlewareInstance = (typeof middlewareClassOrInstance === 'function' && !('use' in middlewareClassOrInstance))
+            ? await globalContainer.resolve(middlewareClassOrInstance as Type<unknown>) as NestMiddleware
+            : middlewareClassOrInstance as NestMiddleware;
+            
+          await middlewareInstance.use(context.request, context.set, () => Promise.resolve());
+        }
+      });
+    }
+
+    // Global Error Handler
+    app.onError(({ error, set }) => {
+      console.error(error);
+      if (error instanceof HttpException) {
+        set.status = error.getStatus();
+        return error.getResponse();
+      }
+      
+      // Fallback
+      set.status = 500;
+      return {
+        message:
+          error instanceof Error
+            ? error.message
+            : (error as Record<string, unknown>)?.message || 'Internal server error',
+        statusCode: 500,
+      };
+    });
 
     for (const controllerClass of controllers) {
       // We expect controllerClass to be a constructor function
@@ -248,6 +327,11 @@ export class ElysiaFactory {
         const cacheKeyMeta = Reflect.getMetadata('cache_module:cache_key', methodFn);
         const cacheTtlMeta = Reflect.getMetadata('cache_module:cache_ttl', methodFn);
 
+        // Retrieve Rate Limit metadata
+        const controllerRateLimit = Reflect.getMetadata(RATE_LIMIT_METADATA, constructorTarget);
+        const methodRateLimit = Reflect.getMetadata(RATE_LIMIT_METADATA, methodFn);
+        const rateLimitConfig = methodRateLimit || controllerRateLimit;
+
         // Map the method descriptor back to Elysia handlers
         const elysiaMethod = httpMethod === RequestMethod.DELETE ? 'delete' : httpMethod;
 
@@ -256,7 +340,35 @@ export class ElysiaFactory {
         
         if (typeof elysiaApp[elysiaMethod] === 'function') {
            this.logger.log(`Mapped {${fullPath}, ${httpMethod}} route`, 'RouterExplorer');
-           elysiaApp[elysiaMethod](
+           
+           // Extract base configuration 
+           const routeConfig: any = {
+             ...builtSchema,
+             type: hasBodySchema ? 'json' : undefined,
+             beforeHandle: async (context: Context) => {
+               for (const guard of allGuards) {
+                 const guardInstance = await globalContainer.resolve(guard as Type<unknown>) as CanActivate;
+                 const canActivate = await guardInstance.canActivate(context);
+                 if (!canActivate) {
+                   throw new ForbiddenException('Forbidden resource');
+                 }
+               }
+             }
+           };
+
+           // Apply Elysia Rate Limit directly to the specific route generator if configured
+           let finalAppRoute: any = elysiaApp;
+           if (rateLimitConfig) {
+             const rlOpts = rateLimitConfig as RateLimitOptions;
+             finalAppRoute = finalAppRoute.use(rateLimit({
+                max: rlOpts.max || 100,
+                duration: rlOpts.duration || 60,
+                headers: true, // Inject X-RateLimit-* headers
+                generator: (req: Request) => `${fullPath}-${req.headers.get('x-forwarded-for') || req.headers.get('host') || 'local'}`
+             }));
+           }
+
+           finalAppRoute[elysiaMethod](
              fullPath, 
              async (context: Context) => {
                // 1. Extract base args
@@ -338,20 +450,7 @@ export class ElysiaFactory {
                  throw error;
                }
              },
-              {
-               ...builtSchema,
-               // Force JSON parsing if body exists but no strict schema is declared natively
-               type: hasBodySchema ? 'json' : undefined,
-               beforeHandle: async (context: Context) => {
-                 for (const guard of allGuards) {
-                   const guardInstance = await globalContainer.resolve(guard as Type<unknown>) as CanActivate;
-                   const canActivate = await guardInstance.canActivate(context);
-                   if (!canActivate) {
-                     throw new ForbiddenException('Forbidden resource');
-                   }
-                 }
-               }
-             }
+             routeConfig
           );
         }
       }

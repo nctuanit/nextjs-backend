@@ -14,6 +14,10 @@ import nextjsIntegrationRaw from "../content/nextjs-integration.mdx" with { type
 import loggerRaw from "../content/logger.mdx" with { type: "text" };
 import configModuleRaw from "../content/config-module.mdx" with { type: "text" };
 import jwtAuthRaw from "../content/jwt-auth.mdx" with { type: "text" };
+import cacheModuleRaw from "../content/cache-module.mdx" with { type: "text" };
+import globalMiddlewareRaw from "../content/global-middleware.mdx" with { type: "text" };
+import websocketGatewayRaw from "../content/websocket-gateway.mdx" with { type: "text" };
+import devModeRaw from "../content/dev-mode.mdx" with { type: "text" };
 
 export function IntroPage() { return <MarkdownRenderer content={introRaw as unknown as string} />; }
 export function FirstStepsPage() { return <MarkdownRenderer content={firstStepsRaw as unknown as string} />; }
@@ -29,3 +33,7 @@ export function OpenAPIPage() { return <MarkdownRenderer content={openapiRaw as 
 export function LoggerPage() { return <MarkdownRenderer content={loggerRaw as unknown as string} />; }
 export function ConfigModulePage() { return <MarkdownRenderer content={configModuleRaw as unknown as string} />; }
 export function JwtAuthPage() { return <MarkdownRenderer content={jwtAuthRaw as unknown as string} />; }
+export function CacheModulePage() { return <MarkdownRenderer content={cacheModuleRaw as unknown as string} />; }
+export function GlobalMiddlewarePage() { return <MarkdownRenderer content={globalMiddlewareRaw as unknown as string} />; }
+export function WebSocketGatewayPage() { return <MarkdownRenderer content={websocketGatewayRaw as unknown as string} />; }
+export function DevModePage() { return <MarkdownRenderer content={devModeRaw as unknown as string} />; }

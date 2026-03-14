@@ -1,0 +1,72 @@
+# CacheModule
+
+Module `CacheModule` được cung cấp sẵn nhằm tận dụng cơ chế lưu trữ bộ đệm tĩnh của Bun (tốc độ cực nhanh), kết hợp cùng Web Standard Storage API cho bộ nhớ tạm thời. Nó giúp tăng hiệu năng server bằng cách chặn bớt truy vấn DB/API và trả lại kết quả bộ đệm.
+
+## Cài đặt cơ bản
+
+Bạn hoàn toàn có thể khởi chạy Cache thông qua Dependency Injection với cấu hình (TTL và giới hạn Max Records) theo ý muốn.
+
+```typescript
+import { Module, CacheModule } from 'next-js-backend';
+
+@Module({
+  imports: [
+    CacheModule.register({ 
+      ttl: 60, // Bộ nhớ đệm tự hủy sau 60 giây
+      max: 100 // Tối đa lưu trữ 100 khóa, bảo vệ bộ nhớ Server (LRU mechanism)
+    })
+  ]
+})
+export class AppModule {}
+```
+
+## Sử dụng Cache Interceptor (Route level)
+
+Cách tuyệt vời nhất để giảm tải máy chủ và kích hoạt bộ nhớ đệm tự động là sử dụng `CacheInterceptor` ở trên từng route bằng decorator `@UseInterceptors()`. Tất cả truy vấn `GET` tới URL tương ứng sẽ tự được chặn bằng Interceptor này.
+
+```typescript
+import { Controller, Get, UseInterceptors, CacheInterceptor } from 'next-js-backend';
+
+@Controller('/products')
+@UseInterceptors(CacheInterceptor)
+export class ProductsController {
+  
+  @Get()
+  async getProducts() {
+    // Đoạn code này chỉ chạy lại khi TTL hết hạn, hoặc bị dọn từ cache list
+    const expensiveResult = await this.databaseOperation();
+    return { data: expensiveResult };
+  }
+}
+```
+
+## Sử dụng Cache Service Thủ công 
+
+Bên cạnh cách tự động bằng Interceptor, bạn có thể gọi thẳng service đệm thông qua hàm khởi tạo (`@Injectable`) của Controller / Provider.
+
+```typescript
+import { Controller, Get, Post, Body, Inject } from 'next-js-backend';
+import { CacheService } from 'next-js-backend';
+
+@Controller('/settings')
+export class SettingsController {
+  
+  constructor(private readonly cache: CacheService) {}
+
+  @Get()
+  async getSettings() {
+    const cached = await this.cache.get('sys-settings');
+    if (cached) return cached;
+
+    const dbSettings = { theme: 'dark' };
+    await this.cache.set('sys-settings', dbSettings, { ttl: 300 }); // 5 minutes override
+    return dbSettings;
+  }
+
+  @Post('/clear-cache')
+  async clear() {
+    await this.cache.del('sys-settings');
+    return { status: 'cleared' };
+  }
+}
+```
