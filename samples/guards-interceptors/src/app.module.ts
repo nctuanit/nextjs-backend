@@ -1,4 +1,4 @@
-import { Module } from '../../index';
+import { Module } from 'next-js-backend';
 import { DashboardController } from './dashboard.controller';
 import { AuthGuard } from './auth.guard';
 import { LoggingInterceptor } from './logging.interceptor';

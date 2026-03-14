@@ -1,6 +1,7 @@
 import { describe, expect, it, beforeAll } from 'bun:test';
 import { Controller, Get, ElysiaFactory, Injectable } from '../../index';
 import { Module } from '../../index';
+import { DynamicModule } from '../../src/interfaces';
 
 @Injectable()
 class RandomizerService {
@@ -21,24 +22,52 @@ class ConfigProvider {
   }
 }
 
+@Injectable()
+class DeepConfigProvider {
+  getFeatureFlag() {
+    return true;
+  }
+}
+
+class InnerDynamicModule {
+  static forRoot(): DynamicModule {
+    return {
+      module: InnerDynamicModule,
+      providers: [DeepConfigProvider]
+    };
+  }
+}
+
+class OuterDynamicModule {
+  static register(): DynamicModule {
+    return {
+      module: OuterDynamicModule,
+      imports: [InnerDynamicModule.forRoot()]
+    };
+  }
+}
+
 @Controller('/di')
 class DIController {
   // Test constructor injection
   constructor(
     private randomizer: RandomizerService,
-    private config: ConfigProvider
+    private config: ConfigProvider,
+    private deepConfig: DeepConfigProvider
   ) {}
 
   @Get()
   getServicesData() {
     return {
       hash: this.randomizer.getHash(),
-      db: this.config.getDbUrl()
+      db: this.config.getDbUrl(),
+      featureEnabled: this.deepConfig.getFeatureFlag()
     };
   }
 }
 
 @Module({
+  imports: [OuterDynamicModule.register()],
   controllers: [DIController],
   providers: [
     { provide: RandomizerService, useClass: RandomizerService },
@@ -67,5 +96,8 @@ describe('E2E Dependency Injection (ElysiaFactory)', () => {
     
     // ConfigProvider was overridden in @Module providers! UseValue injected mock behavior
     expect(data.db).toBe('mysql://custom_injection');
+
+    // DeepConfigProvider is resolved from a deeply nested DynamicModule imports hierarchy
+    expect(data.featureEnabled).toBe(true);
   });
 });

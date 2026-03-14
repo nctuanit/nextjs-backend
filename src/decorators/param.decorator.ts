@@ -74,6 +74,7 @@ export const Param = createParamDecorator(RouteParamtypes.PARAM);
 export const Query = createParamDecorator(RouteParamtypes.QUERY);
 export const Headers = createParamDecorator(RouteParamtypes.HEADERS);
 export const Req = createParamDecorator(RouteParamtypes.REQUEST);
+export const Request = Req;
 export const Res = createParamDecorator(RouteParamtypes.RESPONSE);
 export const Session = createParamDecorator(RouteParamtypes.SESSION);
 export const File = createParamDecorator(RouteParamtypes.FILE);

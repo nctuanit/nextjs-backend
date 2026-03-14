@@ -14,7 +14,7 @@ describe('SessionModule & SessionService', () => {
     // Manually register to isolated test container flow
     globalContainer.addProviders(moduleDef.providers || []);
     
-    const service = await globalContainer.resolve(SessionService);
+    const service = await globalContainer.resolve(SessionService) as SessionService;
     expect(service).toBeDefined();
 
     const storeInstance = await globalContainer.resolve(SESSION_STORE);
@@ -46,7 +46,7 @@ describe('SessionModule & SessionService', () => {
     const storeInstance = await globalContainer.resolve(SESSION_STORE);
     expect(storeInstance instanceof CustomRedisStore).toBe(true);
 
-    const service = await globalContainer.resolve(SessionService);
+    const service = await globalContainer.resolve(SessionService) as SessionService;
     
     const sid = await service.createSession({ role: 'admin' });
     const data = await service.getSession(sid);

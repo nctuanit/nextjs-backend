@@ -1,5 +1,5 @@
 import { type Context } from 'elysia';
-import { Injectable, type CanActivate } from '../../index';
+import { Injectable, type CanActivate } from 'next-js-backend';
 
 @Injectable()
 export class AuthGuard implements CanActivate {

@@ -11,9 +11,10 @@ import {
   PIPES_METADATA,
   FILTERS_METADATA
 } from '../constants';
+import { GATEWAY_METADATA, PATTERN_METADATA, MESSAGE_MAPPING_METADATA, type GatewayOptions } from '../decorators/websocket.decorator';
 import { RequestMethod } from '../decorators/method.decorator';
 import { RouteParamtypes, type RouteParamMetadata } from '../decorators/param.decorator';
-import { type CanActivate, type NestInterceptor, type PipeTransform, type ExceptionFilter } from '../interfaces';
+import { type CanActivate, type NestInterceptor, type PipeTransform, type ExceptionFilter, type NestMiddleware } from '../interfaces';
 import { FILTER_CATCH_EXCEPTIONS } from '../decorators/catch.decorator';
 import { HttpException, ForbiddenException } from '../exceptions';
 import { MODULE_METADATA } from '../constants';
@@ -25,6 +26,7 @@ import { SESSION_OPTIONS } from '../session/session.module';
 export interface FactoryOptions {
   globalPrefix?: string;
   globalFilters?: (Type<ExceptionFilter> | ExceptionFilter)[];
+  globalMiddlewares?: (Type<NestMiddleware> | NestMiddleware)[];
 }
 
 export class ElysiaFactory {
@@ -45,8 +47,23 @@ export class ElysiaFactory {
     
     const app = new Elysia({ prefix: options?.globalPrefix });
 
+    // Global Middlewares (onRequest hook)
+    if (options?.globalMiddlewares && options.globalMiddlewares.length > 0) {
+      app.onRequest(async (context) => {
+        for (const middlewareClassOrInstance of options.globalMiddlewares!) {
+          // Resolve if it's a class
+          const middlewareInstance = (typeof middlewareClassOrInstance === 'function' && !('use' in middlewareClassOrInstance))
+            ? await globalContainer.resolve(middlewareClassOrInstance as Type<unknown>) as NestMiddleware
+            : middlewareClassOrInstance as NestMiddleware;
+            
+          await middlewareInstance.use(context.request, context.set, () => Promise.resolve());
+        }
+      });
+    }
+
     // Global Error Handler
     app.onError(({ error, set }) => {
+      console.error(error);
       if (error instanceof HttpException) {
         set.status = error.getStatus();
         return error.getResponse();
@@ -227,6 +244,10 @@ export class ElysiaFactory {
         const methodFilters = Reflect.getMetadata(FILTERS_METADATA, methodFn) || [];
         const allFilters = [...(options?.globalFilters || []), ...controllerFilters, ...methodFilters];
 
+        // Retrieve Cache Metadata explicitly and inject into the runner
+        const cacheKeyMeta = Reflect.getMetadata('cache_module:cache_key', methodFn);
+        const cacheTtlMeta = Reflect.getMetadata('cache_module:cache_ttl', methodFn);
+
         // Map the method descriptor back to Elysia handlers
         const elysiaMethod = httpMethod === RequestMethod.DELETE ? 'delete' : httpMethod;
 
@@ -277,14 +298,19 @@ export class ElysiaFactory {
                const executeMethod = async () => await methodFn.apply(instance, extractedArgs);
                let runner: () => Promise<unknown> = executeMethod;
 
-               // Interceptors wrap the actual controller execution
-               for (let i = allInterceptors.length - 1; i >= 0; i--) {
-                 const interceptorClass = allInterceptors[i];
-                 // Instantiate interceptor via DI
-                 const interceptorInstance = await globalContainer.resolve(interceptorClass as Type<unknown>) as NestInterceptor;
-                 const nextRunner = runner;
-                 runner = async () => await interceptorInstance.intercept(context, nextRunner);
-               }
+                // Interceptors wrap the actual controller execution
+                for (let i = allInterceptors.length - 1; i >= 0; i--) {
+                  const interceptorClass = allInterceptors[i];
+                  // Instantiate interceptor via DI
+                  const interceptorInstance = await globalContainer.resolve(interceptorClass as Type<unknown>) as NestInterceptor;
+                  
+                  // Inject Metadata so Interceptors can respond (like CacheInterceptor)
+                  if (cacheKeyMeta) (context as any).cacheKey = cacheKeyMeta;
+                  if (cacheTtlMeta) (context as any).cacheTtl = cacheTtlMeta;
+
+                  const nextRunner = runner;
+                  runner = async () => await interceptorInstance.intercept(context, nextRunner);
+                }
 
                try {
                  return await runner();
@@ -328,6 +354,89 @@ export class ElysiaFactory {
              }
           );
         }
+      }
+    }
+
+    // Initialize WebSockets Gateways
+    for (const provider of providers) {
+      const providerClass = typeof provider === 'function' ? provider : (provider as any).useClass;
+      if (!providerClass) continue;
+
+      const gatewayOptions: GatewayOptions = Reflect.getMetadata(GATEWAY_METADATA, providerClass);
+      if (gatewayOptions) {
+        // Instantiate the gateway via DI
+        const instance = await globalContainer.resolve(providerClass) as any;
+        const prototype = Object.getPrototypeOf(instance);
+        const methodsNames = Object.getOwnPropertyNames(prototype).filter(
+          (method) => method !== 'constructor' && typeof prototype[method] === 'function',
+        );
+
+        const wsPath = gatewayOptions.path || '/ws';
+        const wsNamespace = gatewayOptions.namespace ? `/${gatewayOptions.namespace}` : '';
+        const fullWsPath = `${wsNamespace}${wsPath}`;
+
+        ElysiaFactory.logger.log(`Mapped WebSockets Gateway to path {${fullWsPath}}`, 'RouterExplorer');
+
+        // We use Elysia's native App.ws() plugin capability
+        app.ws(fullWsPath, {
+          open(ws) {
+            // Optional lifecycle hook: handleConnection()
+            if (typeof instance.handleConnection === 'function') {
+              instance.handleConnection(ws);
+            }
+          },
+          message(ws, rawMessage) {
+            let event = '';
+            let data: any = rawMessage;
+
+            // Handle NestJS formatted WS messages: { event: 'string', data: any }
+            if (typeof rawMessage === 'object' && rawMessage !== null && 'event' in rawMessage) {
+              const msgObj = rawMessage as { event: string; data?: any };
+              event = msgObj.event;
+              data = msgObj.data;
+            } else if (typeof rawMessage === 'string') {
+               try {
+                  const parsed = JSON.parse(rawMessage);
+                  if (parsed.event) {
+                    event = parsed.event;
+                    data = parsed.data;
+                  }
+               } catch (e) {
+                 // Ignore standard string un-parseable messages
+               }
+            }
+
+            // Route standard NestJS @SubscribeMessage() events
+            for (const methodName of methodsNames) {
+              const methodFn = prototype[methodName];
+              const isMessageHandler = Reflect.getMetadata(MESSAGE_MAPPING_METADATA, methodFn);
+              const messagePattern = Reflect.getMetadata(PATTERN_METADATA, methodFn);
+
+              // If event matches the explicit pattern, or if it isn't an 'event' envelope just forward to everything?
+              // Standard behavior is only mapping matched events
+              if (isMessageHandler && messagePattern === event) {
+                const responseData = methodFn.call(instance, data, ws);
+                
+                // If it returns a promise, resolve and optionally send back
+                if (responseData instanceof Promise) {
+                  responseData.then(res => {
+                    if (res) ws.send(res);
+                  }).catch(err => {
+                    ElysiaFactory.logger.error(`WebSocket Error inside ${providerClass.name}.${methodName}: ${err}`, 'WebSocketGateway');
+                  });
+                } else if (responseData) {
+                  ws.send(responseData);
+                }
+              }
+            }
+          },
+          close(ws, code, message) {
+            // Optional lifecycle hook: handleDisconnect()
+            if (typeof instance.handleDisconnect === 'function') {
+              instance.handleDisconnect(ws, code, message);
+            }
+          }
+        });
       }
     }
 

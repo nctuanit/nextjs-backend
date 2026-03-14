@@ -5,6 +5,10 @@ export interface CanActivate {
   canActivate(context: Context): boolean | Promise<boolean>;
 }
 
+export interface NestMiddleware<TRequest = any, TResponse = any> {
+  use(req: TRequest, res: TResponse, next: () => void | Promise<void>): any | Promise<any>;
+}
+
 export interface NestInterceptor<T = any, R = any> {
   intercept(context: any, next: () => Promise<R>): Promise<R>;
 }

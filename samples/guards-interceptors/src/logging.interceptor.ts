@@ -1,5 +1,4 @@
-import { type Context } from 'elysia';
-import { Injectable, type NestInterceptor } from '../../index';
+import { Injectable, type NestInterceptor, type Context } from 'next-js-backend';
 
 @Injectable()
 export class LoggingInterceptor implements NestInterceptor {

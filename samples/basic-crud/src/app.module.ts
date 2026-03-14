@@ -1,4 +1,4 @@
-import { Module } from '../../index';
+import { Module } from 'next-js-backend';
 import { UsersController } from './users.controller';
 import { UsersService } from './users.service';
 

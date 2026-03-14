@@ -1,4 +1,4 @@
-import { Injectable, NotFoundException } from '../../index';
+import { Injectable, NotFoundException } from 'next-js-backend';
 
 @Injectable()
 export class UsersService {

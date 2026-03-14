@@ -4,7 +4,7 @@ import { Injectable } from '../di/injectable.decorator';
 import { CONTROLLER_WATERMARK, PATH_METADATA } from '../constants';
 
 export function Controller(prefix: string = ''): ClassDecorator {
-  return (target: object | Function) => {
+  return (target: Function) => {
     Injectable()(target);
     Reflect.defineMetadata(CONTROLLER_WATERMARK, true, target);
     // Ensure prefixes start with / and don't end with / unless it's just /

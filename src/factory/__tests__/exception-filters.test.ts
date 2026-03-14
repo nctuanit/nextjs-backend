@@ -69,7 +69,7 @@ describe('Exception Filters', () => {
     const app = await ElysiaFactory.create(ErrorModule);
     const req = new Request('http://localhost/errors/custom');
     const res = await app.handle(req);
-    const json = await res.json();
+    const json = await res.json() as any;
     
     expect(res.status).toBe(418);
     expect(json.caught).toBe(true);
@@ -82,7 +82,7 @@ describe('Exception Filters', () => {
     });
     const req = new Request('http://localhost/errors/unhandled');
     const res = await app.handle(req);
-    const json = await res.json();
+    const json = await res.json() as any;
     
     expect(res.status).toBe(500);
     expect(json.fromGlobal).toBe(true);
@@ -94,7 +94,7 @@ describe('Exception Filters', () => {
     });
     const req = new Request('http://localhost/errors/success');
     const res = await app.handle(req);
-    const json = await res.json();
+    const json = await res.json() as any;
     
     expect(res.status).toBe(200);
     expect(json.ok).toBe(true);

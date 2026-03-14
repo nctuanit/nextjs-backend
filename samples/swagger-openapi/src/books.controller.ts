@@ -1,5 +1,5 @@
 import { t } from 'elysia';
-import { Controller, Get, Post, Param, Body } from '../../index';
+import { Controller, Get, Post, Param, Body, NotFoundException } from 'next-js-backend';
 import { BooksService } from './books.service';
 
 @Controller('/books')

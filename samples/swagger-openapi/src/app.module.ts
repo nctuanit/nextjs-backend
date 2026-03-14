@@ -1,4 +1,4 @@
-import { Module } from '../../index';
+import { Module } from 'next-js-backend';
 import { BooksController } from './books.controller';
 import { BooksService } from './books.service';
 

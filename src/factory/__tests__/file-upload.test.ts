@@ -61,10 +61,53 @@ describe('File Upload Decorators', () => {
     });
 
     const res = await app.handle(req);
-    const json = await res.json();
+    const json = await res.json() as any;
     
     expect(res.status).toBe(200);
     expect(json.count).toBe(2);
     expect(json.first).toBe('doc1.pdf');
+  });
+
+  test('should gracefully handle when no file is provided', async () => {
+    const app = await ElysiaFactory.create(UploadModule);
+    
+    const formData = new FormData();
+    // Intentionally omit appending 'avatar'
+
+    const req = new Request('http://localhost/upload/single', {
+      method: 'POST',
+      body: formData,
+    });
+
+    const res = await app.handle(req);
+    const json = await res.json();
+    
+    // In Elysia, missing optional form data is undefined. 
+    // It should hit our `if (!avatar) return { error: 'No file' }`
+    expect(res.status).toBe(200);
+    expect(json).toEqual({ error: 'No file' });
+  });
+
+  test('should gracefully handle when non-file string is sent instead of File', async () => {
+    const app = await ElysiaFactory.create(UploadModule);
+    
+    const formData = new FormData();
+    // Append a string instead of a File object
+    formData.append('avatar', 'just text string');
+
+    const req = new Request('http://localhost/upload/single', {
+      method: 'POST',
+      body: formData,
+    });
+
+    const res = await app.handle(req);
+    const json = await res.json() as any;
+    
+    // In Elysia multipart form data, appending just a string still comes through,
+    // but without `.name` or `.size` (unless it's coerced). Our handler expects a File.
+    expect(res.status).toBe(200);
+    // Because 'just text string' string lacks name and size properties
+    expect(json.name).toBeUndefined();
+    expect(json.size).toBeUndefined();
   });
 });

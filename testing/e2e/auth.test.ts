@@ -83,7 +83,40 @@ describe('JWT Authentication & AuthGuard', () => {
     );
     
     expect(successResp.status).toBe(200);
-    const successJson = await successResp.json();
+    const successJson = (await successResp.json()) as any;
     expect(successJson.message).toBe('Protected data accessible');
+  });
+
+  it('JwtService should throw errors on expired or invalid tokens directly', async () => {
+    const jwtService = new JwtService({ secret: 'test-secret' });
+    
+    // 1. Expired Token
+    const expiredToken = await jwtService.signAsync(
+      { userId: 2 },
+      { expiresIn: '-1s' } // expires immediately
+    );
+    
+    let expiredError;
+    try {
+      await jwtService.verifyAsync(expiredToken);
+    } catch (e: any) {
+      expiredError = e;
+    }
+    expect(expiredError).toBeDefined();
+    expect(expiredError.message).toContain('Invalid or expired token');
+
+    // 2. Invalid Signature
+    const validToken = await jwtService.signAsync({ id: 1 }, { expiresIn: '10m' });
+    const tamperedToken = validToken.slice(0, -5) + 'abcde';
+    
+    let signatureError;
+    try {
+      await jwtService.verifyAsync(tamperedToken);
+    } catch (e: any) {
+      signatureError = e;
+    }
+    expect(signatureError).toBeDefined();
+    expect(signatureError.message).toContain('Invalid or expired token');
+    expect(signatureError.message).toContain('signature verification failed');
   });
 });

@@ -1,5 +1,5 @@
 import { t } from 'elysia';
-import { Controller, Get, Post, Param, Body } from '../../index';
+import { Controller, Get, Post, Param, Body } from 'next-js-backend';
 import { UsersService } from './users.service';
 
 @Controller('/users')

@@ -1,7 +1,7 @@
 import { describe, expect, it, beforeAll } from 'bun:test';
 import { type Context } from 'elysia';
 import { Controller, Get, ElysiaFactory } from '../../index';
-import { UseGuards, UseInterceptors, ForbiddenException, BadRequestException, Injectable } from '../../index';
+import { UseGuards, UseInterceptors, ForbiddenException, BadRequestException, HttpException, Injectable } from '../../index';
 import { type CanActivate, type NestInterceptor } from '../../src/interfaces';
 import { Module } from '../../index';
 
@@ -31,6 +31,11 @@ class MiddlewareController {
     throw new BadRequestException('Custom Error');
   }
 
+  @Get('/custom-error-payload')
+  throwCustomPayload() {
+    throw new HttpException({ errorCode: 'VALIDATION_FAILED', details: ['field1', 'field2'] }, 422);
+  }
+
   @Get('/protected')
   @UseGuards(AuthGuard)
   getProtected() {
@@ -51,8 +56,18 @@ class MiddlewareController {
   }
 }
 
+@Controller('/controller-level')
+@UseGuards(AuthGuard)
+@UseInterceptors(TransformInterceptor)
+class ControllerLevelMiddleware {
+  @Get()
+  getGuardedIntercepted() {
+    return { success: true };
+  }
+}
+
 @Module({
-  controllers: [MiddlewareController],
+  controllers: [MiddlewareController, ControllerLevelMiddleware],
   providers: [AuthGuard, TransformInterceptor]
 })
 class MiddlewareModule {}
@@ -71,6 +86,12 @@ describe('E2E Guards, Interceptors & Exceptions', () => {
     const res = await req('/middleware/error');
     expect(res.status).toBe(400); // BadRequestException
     expect(await res.text()).toBe('Custom Error');
+  });
+
+  it('should auto-serialize HttpExceptions with complex object payloads', async () => {
+    const res = await req('/middleware/custom-error-payload');
+    expect(res.status).toBe(422);
+    expect(await res.json()).toEqual({ errorCode: 'VALIDATION_FAILED', details: ['field1', 'field2'] });
   });
 
   it('should block requests without valid Guard authorization', async () => {
@@ -101,5 +122,20 @@ describe('E2E Guards, Interceptors & Exceptions', () => {
     });
     expect(res.status).toBe(200);
     expect(await res.json()).toEqual({ data: 'hybrid', intercepted: true }); // both passed
+  });
+
+  it('should apply guards and interceptors defined at the Controller class level', async () => {
+    // Fail guard
+    let res = await req('/controller-level', {
+      headers: { authorization: 'Bearer bad_token' }
+    });
+    expect(res.status).toBe(403);
+    
+    // Pass guard, trigger interceptor
+    res = await req('/controller-level', {
+      headers: { authorization: 'Bearer valid_token' }
+    });
+    expect(res.status).toBe(200);
+    expect(await res.json()).toEqual({ success: true, intercepted: true });
   });
 });

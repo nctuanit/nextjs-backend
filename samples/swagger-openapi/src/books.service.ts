@@ -1,4 +1,4 @@
-import { Injectable } from '../../index';
+import { Injectable } from 'next-js-backend';
 
 @Injectable()
 export class BooksService {

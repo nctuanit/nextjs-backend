@@ -10,9 +10,10 @@
 
     // Bundler mode
     "moduleResolution": "bundler",
-    "allowImportingTsExtensions": true,
-    "verbatimModuleSyntax": true,
-    "noEmit": true,
+    "verbatimModuleSyntax": false,
+    "noEmit": false,
+    "declaration": true,
+    "outDir": "dist",
 
     // Best practices
     "strict": true,
@@ -29,5 +30,16 @@
     // Decorators
     "experimentalDecorators": true,
     "emitDecoratorMetadata": true
-  }
+  },
+  "include": [
+    "src/**/*",
+    "index.ts",
+    "globals.d.ts"
+  ],
+  "exclude": [
+    "node_modules",
+    "dist",
+    "docs",
+    "samples"
+  ]
 }

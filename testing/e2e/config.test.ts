@@ -38,10 +38,10 @@ describe('ConfigModule & Dynamic Modules', () => {
     const configService = await globalContainer.resolve(ConfigService) as ConfigService<any>;
 
     // Verify conversions and defaults
-    expect(configService.get('API_KEY')).toBe('secret-key');
-    expect(configService.get('PORT')).toBe(8080);
-    expect(configService.get('IS_PROD')).toBe(true);
-    expect(configService.get('NODE_ENV')).toBe('development'); // Applied default
+    expect((configService as any).get('API_KEY')).toBe('secret-key');
+    expect((configService as any).get('PORT')).toBe(8080);
+    expect((configService as any).get('IS_PROD')).toBe(true);
+    expect((configService as any).get('NODE_ENV')).toBe('development'); // Applied default
   });
 
   it('should throw error on invalid configuration', async () => {

@@ -1,4 +1,4 @@
-import { Controller, Get, Headers, UseGuards, UseInterceptors } from '../../index';
+import { Controller, Get, UseGuards, UseInterceptors, Headers } from 'next-js-backend';
 import { AuthGuard } from './auth.guard';
 import { LoggingInterceptor } from './logging.interceptor';
 

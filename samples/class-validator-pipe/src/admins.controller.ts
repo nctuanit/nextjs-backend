@@ -1,4 +1,4 @@
-import { Controller, Get, Post, Body, UsePipes, ValidationPipe } from '../../index';
+import { Controller, Get, Post, Body, UsePipes, ValidationPipe } from 'next-js-backend';
 import { CreateAdminDto } from './dto/create-admin.dto';
 
 @Controller('/admins')
