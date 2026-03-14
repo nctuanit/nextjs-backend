@@ -36,4 +36,5 @@ export * from './src/dev-mode/dev-mode.service';
 export * from './src/cache/cache.store';
 export * from './src/decorators/cache.decorator';
 export * from './src/decorators/websocket.decorator';
+export * from './src/decorators/sse.decorator';
 export * from './src/session/session.options';

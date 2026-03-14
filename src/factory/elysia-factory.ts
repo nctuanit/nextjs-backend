@@ -12,6 +12,7 @@ import {
   FILTERS_METADATA
 } from '../constants';
 import { GATEWAY_METADATA, PATTERN_METADATA, MESSAGE_MAPPING_METADATA, type GatewayOptions } from '../decorators/websocket.decorator';
+import { SSE_METADATA } from '../decorators/sse.decorator';
 import { RequestMethod } from '../decorators/method.decorator';
 import { RouteParamtypes, type RouteParamMetadata } from '../decorators/param.decorator';
 import { type CanActivate, type NestInterceptor, type PipeTransform, type ExceptionFilter, type NestMiddleware } from '../interfaces';
@@ -108,7 +109,12 @@ export class ElysiaFactory {
        } else {
            continue;
        }
-       await globalContainer.resolve(token);
+       const instance = await globalContainer.resolve(token) as any;
+       
+       // Execute onModuleInit lifecycle hook if implemented
+       if (instance && typeof instance.onModuleInit === 'function') {
+           await instance.onModuleInit();
+       }
     }
 
     // Try to inject Global Plugins if PluginsModule is registered
@@ -453,6 +459,85 @@ export class ElysiaFactory {
              routeConfig
           );
         }
+      }
+    }
+
+    // Register SSE (Server-Sent Events) endpoints
+    for (const controllerClass of controllers) {
+      const constructorTarget = controllerClass as new (...args: unknown[]) => unknown;
+      const isController = Reflect.getMetadata(CONTROLLER_WATERMARK, constructorTarget);
+      if (!isController) continue;
+
+      const instance = await globalContainer.resolve(constructorTarget) as Record<string, unknown>;
+      const prefix = Reflect.getMetadata(PATH_METADATA, constructorTarget) || '';
+      const normalizedPrefix = prefix === '/' ? '' : prefix;
+      const prototype = Object.getPrototypeOf(instance);
+      const methodsNames = Object.getOwnPropertyNames(prototype).filter(
+        (method) => method !== 'constructor' && typeof prototype[method] === 'function',
+      );
+
+      for (const methodName of methodsNames) {
+        const methodFn = prototype[methodName] as Function;
+        const ssePath: string | undefined = Reflect.getMetadata(SSE_METADATA, methodFn);
+        if (!ssePath) continue;
+
+        let fullPath = `${normalizedPrefix}${ssePath === '/' ? '' : ssePath}`;
+        if (!fullPath) fullPath = '/';
+
+        ElysiaFactory.logger.log(`Mapped {${fullPath}, SSE} route`, 'RouterExplorer');
+
+        app.get(fullPath, async (context) => {
+          // Set SSE headers
+          context.set.headers['content-type'] = 'text/event-stream';
+          context.set.headers['cache-control'] = 'no-cache';
+          context.set.headers['connection'] = 'keep-alive';
+
+          const generator = methodFn.call(instance, context);
+
+          // Support AsyncGenerator (yield-based streaming)
+          if (generator && typeof generator[Symbol.asyncIterator] === 'function') {
+            const stream = new ReadableStream({
+              async start(controller) {
+                try {
+                  for await (const chunk of generator) {
+                    const data = typeof chunk === 'string' ? chunk : JSON.stringify(chunk.data ?? chunk);
+                    const event = (chunk && chunk.event) ? `event: ${chunk.event}\n` : '';
+                    const id = (chunk && chunk.id) ? `id: ${chunk.id}\n` : '';
+                    controller.enqueue(new TextEncoder().encode(`${id}${event}data: ${data}\n\n`));
+                  }
+                } catch (err) {
+                  controller.enqueue(new TextEncoder().encode(`event: error\ndata: ${JSON.stringify({ message: String(err) })}\n\n`));
+                } finally {
+                  controller.close();
+                }
+              }
+            });
+            return new Response(stream, {
+              headers: {
+                'Content-Type': 'text/event-stream',
+                'Cache-Control': 'no-cache',
+                'Connection': 'keep-alive',
+              }
+            });
+          }
+
+          // Support ReadableStream directly returned
+          if (generator instanceof ReadableStream) {
+            return new Response(generator, {
+              headers: {
+                'Content-Type': 'text/event-stream',
+                'Cache-Control': 'no-cache',
+                'Connection': 'keep-alive',
+              }
+            });
+          }
+
+          // Fallback: single data push
+          const data = typeof generator === 'string' ? generator : JSON.stringify(generator);
+          return new Response(`data: ${data}\n\n`, {
+            headers: { 'Content-Type': 'text/event-stream' }
+          });
+        });
       }
     }
 

@@ -60,6 +60,10 @@ When interacting with this codebase, adopt the following structural paradigms:
    - To integrate into Next.js App Router (`app/api/.../route.ts`), do NOT manual handle Promises. Use the helper method natively:
    - `export const { GET, POST, PUT, PATCH, DELETE } = ElysiaFactory.createNextJsHandlers(AppModule, { globalPrefix: '/api' })`
 
-7. **Extensibility & Type Augmentation**:
+7. **Client-side Type Safety (Eden Treaty)**:
+   - The library supports `@elysiajs/eden` out of the box. 
+   - To use Eden, export the type of your Elysia instance: `export type App = typeof app;` and consume it in your frontend using `edenTreaty<App>('http://localhost:3000')`.
+
+8. **Extensibility & Type Augmentation**:
    - AI Agents MUST utilize TypeScript declaration merging (`declare module 'next-js-backend'`) if modifying `SessionData` or `User` objects to retain strict Type safety across the module logic.
    - Code style strongly favors ES Modules (`import`/`export`), Strict TS configs, and pure OOP.

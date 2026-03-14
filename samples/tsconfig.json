@@ -1,13 +1,18 @@
 {
   "compilerOptions": {
     "target": "ESNext",
-    "module": "CommonJS",
-    "moduleResolution": "node",
+    "module": "ESNext",
+    "moduleResolution": "bundler",
     "strict": true,
     "esModuleInterop": true,
     "skipLibCheck": true,
     "forceConsistentCasingInFileNames": true,
     "experimentalDecorators": true,
-    "emitDecoratorMetadata": true
+    "emitDecoratorMetadata": true,
+    "paths": {
+      "next-js-backend": ["../index.ts"],
+      "elysia": ["../node_modules/elysia"],
+      "@elysiajs/*": ["../node_modules/@elysiajs/*"]
+    }
   }
 }

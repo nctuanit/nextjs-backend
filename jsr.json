@@ -1,0 +1,5 @@
+{
+  "name": "@nctuanit/nextjs-backend",
+  "version": "1.0.4",
+  "exports": "./index.ts"
+}
