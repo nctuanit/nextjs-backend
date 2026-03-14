@@ -1,7 +1,7 @@
 {
   "name": "next-js-backend-samples",
   "version": "1.0.0",
-  "description": "Sample projects demonstrating ElysiaJS Nest-like framework",
+  "description": "Sample projects demonstrating ElysiaJS Nest-like library",
   "scripts": {
     "start:basic": "bun run basic-crud/index.ts",
     "start:validation": "bun run class-validator-pipe/index.ts",

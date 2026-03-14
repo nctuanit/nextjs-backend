@@ -1,7 +1,7 @@
 #!/usr/bin/env bun
 import plugin from "bun-plugin-tailwind";
 import { existsSync } from "fs";
-import { rm } from "fs/promises";
+import { rm, copyFile } from "fs/promises";
 import path from "path";
 
 if (process.argv.includes("--help") || process.argv.includes("-h")) {
@@ -33,7 +33,7 @@ Example:
   process.exit(0);
 }
 
-const toCamelCase = (str: string): string => str.replace(/-([a-z])/g, g => g[1].toUpperCase());
+const toCamelCase = (str: string): string => str.replace(/-([a-z])/g, (_, letter) => letter.toUpperCase());
 
 const parseValue = (value: string): any => {
   if (value === "true") return true;
@@ -47,8 +47,8 @@ const parseValue = (value: string): any => {
   return value;
 };
 
-function parseArgs(): Partial<Bun.BuildConfig> {
-  const config: Partial<Bun.BuildConfig> = {};
+function parseArgs(): Record<string, any> {
+  const config: Record<string, any> = {};
   const args = process.argv.slice(2);
 
   for (let i = 0; i < args.length; i++) {
@@ -81,7 +81,7 @@ function parseArgs(): Partial<Bun.BuildConfig> {
     key = toCamelCase(key);
 
     if (key.includes(".")) {
-      const [parentKey, childKey] = key.split(".");
+      const [parentKey, childKey] = key.split(".") as [string, string];
       config[parentKey] = config[parentKey] || {};
       config[parentKey][childKey] = parseValue(value);
     } else {
@@ -145,5 +145,19 @@ const outputTable = result.outputs.map(output => ({
 
 console.table(outputTable);
 const buildTime = (end - start).toFixed(2);
+
+// Create 404.html clone for Github Pages SPA Rewrite
+const indexHtmlPath = path.join(outdir, "index.html");
+if (existsSync(indexHtmlPath)) {
+  await copyFile(indexHtmlPath, path.join(outdir, "404.html"));
+  console.log("📝 Generated 404.html for SPA routing");
+}
+
+// Copy llms.txt to dist for crawler availability
+const llmsPath = path.join(process.cwd(), "..", "llms.txt");
+if (existsSync(llmsPath)) {
+  await copyFile(llmsPath, path.join(outdir, "llms.txt"));
+  console.log("🤖 Copied llms.txt for LLM crawlers");
+}
 
 console.log(`\n✅ Build completed in ${buildTime}ms\n`);

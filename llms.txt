@@ -42,13 +42,19 @@ When interacting with this codebase, adopt the following structural paradigms:
    - Prefer validating DTO instances using `@UsePipes(new ValidationPipe())` paired with `class-validator` decorators.
    - Elysia TypeBox (`t.Object`, `t.String`, etc.) is supported gracefully inline. E.g., `@Body(t.Object({ name: t.String() }))`.
 
-5. **Built-in Modules**:
-   - The framework has built in specific enterprise modules:
-     - `ConfigModule`: Validates `process.env` against a TypeBox schema.
-     - `JwtModule`: Generates and verifies JSON Web Tokens.
-     - `SessionModule`: Cookie-based session tracking with pluggable `SessionStore`.
-     - `LoggerService`: Context-aware logging utility.
-     - `PasswordService`: Bun native password hashing (bcrypt / argon2).
+5. **Core Capabilities & Built-in Features**:
+   - The library has built-in specific enterprise modules and core mechanics:
+     - **Global Middlewares (`@Middleware`)**: Cross-cutting Express-like request handlers integrated into the IoC.
+     - **ConfigModule**: Validates `process.env` against a TypeBox schema.
+     - **JwtModule**: Generates and verifies JSON Web Tokens.
+     - **SessionModule**: Cookie-based session tracking with pluggable `SessionStore` (Cookie/Redis).
+     - **LoggerService**: Context-aware custom logging utility.
+     - **PasswordService**: Bun native password hashing (bcrypt / argon2).
+     - **CacheModule**: Automatic endpoint caching in-memory or Redis via `@CacheKey`, `@CacheTTL` and `CacheStore` interfaces.
+     - **WebSocketGateway**: Advanced bidirectional socket handlers mapped with `@WebSocketGateway`, `@SubscribeMessage`, `@MessageBody`, and `@ConnectedSocket`.
+     - **DevModeModule (Request Profiler)**: Zero-overhead request execution profiler injected via `onAfterResponse` hooks with built-in dashboard endpoints (`/dev/history`, `/dev/stats`).
+     - **Global Exception Filters**: Automatic conversion of Custom HttpExceptions or uncaught errors via `ElysiaFactory.addGlobalFilter()`.
+     - **OpenAPI / Swagger**: Supported native by adding `@elysiajs/swagger` to the root Elysia instance.
 
 6. **Next.js Integration Rules**:
    - To integrate into Next.js App Router (`app/api/.../route.ts`), do NOT manual handle Promises. Use the helper method natively:

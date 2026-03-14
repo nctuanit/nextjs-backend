@@ -12,8 +12,8 @@ export interface ModuleMetadata {
 /**
  * Decorator that marks a class as a module.
  *
- * Modules are used by the framework to organize the application structure into scopes.
- * Controllers and providers must be declared in a module to be discovered by the framework.
+ * Modules are used by the library to organize the application structure into scopes.
+ * Controllers and providers must be declared in a module to be discovered by the library.
  *
  * @param metadata Module configuration metadata
  */

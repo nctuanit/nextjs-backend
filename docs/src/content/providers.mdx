@@ -2,7 +2,7 @@
 
 Providers là một khái niệm cơ bản và cốt lõi nhất của kiến trúc nền tảng. Phần lớn các lớp (classes) cơ sở đều được phân loại là một dạng provider – bao gồm các services, repositories, factories, helpers, v.v.
 
-Ý tưởng chủ đạo của provider là khả năng **tiêm (inject)** các thành phần phụ thuộc (dependencies) lẫn nhau. Nói cách khác, các đối tượng (objects) có thể tự động liên kết thành các mối quan hệ phức tạp. Hệ thống **IoC Container (Inversion of Control)** của framework sẽ tự động quản lý và giải quyết toàn bộ quy trình thiết lập kết nối (wiring) này trong quá trình runtime.
+Ý tưởng chủ đạo của provider là khả năng **tiêm (inject)** các thành phần phụ thuộc (dependencies) lẫn nhau. Nói cách khác, các đối tượng (objects) có thể tự động liên kết thành các mối quan hệ phức tạp. Hệ thống **IoC Container (Inversion of Control)** của library sẽ tự động quản lý và giải quyết toàn bộ quy trình thiết lập kết nối (wiring) này trong quá trình runtime.
 
 ## Định nghĩa Services
 
@@ -30,13 +30,13 @@ export class UsersService {
 }
 ```
 
-Decorator `@Injectable()` được gắn vào đầu lớp khai báo thêm các siêu dữ liệu (metadata), cho biết hệ thống IoC Container rằng lớp `UsersService` này có thể nằm dưới sự quản lý vòng đời (lifecycle) của framework.
+Decorator `@Injectable()` được gắn vào đầu lớp khai báo thêm các siêu dữ liệu (metadata), cho biết hệ thống IoC Container rằng lớp `UsersService` này có thể nằm dưới sự quản lý vòng đời (lifecycle) của library.
 
 ## Tiêm Phụ Thuộc (Dependency Injection)
 
-Toàn bộ động cơ hoạt động của framework ứng dụng Design Pattern mạnh mẽ mang tên **Dependency Injection** (Tiêm phụ thuộc).
+Toàn bộ động cơ hoạt động của library ứng dụng Design Pattern mạnh mẽ mang tên **Dependency Injection** (Tiêm phụ thuộc).
 
-Trong ví dụ dưới đây, `UsersService` được tự động khởi tạo và kết nối vào Controller thông qua hàm khởi tạo `constructor`. Sử dụng khả năng phân tích tham số từ Typescript, framework tự động đánh giá kiểu dữ liệu (type resolution) và cung cấp chính xác instance của hệ thống nội bộ phụ thuộc.
+Trong ví dụ dưới đây, `UsersService` được tự động khởi tạo và kết nối vào Controller thông qua hàm khởi tạo `constructor`. Sử dụng khả năng phân tích tham số từ Typescript, library tự động đánh giá kiểu dữ liệu (type resolution) và cung cấp chính xác instance của hệ thống nội bộ phụ thuộc.
 
 ```typescript
 import { Controller, Get, Post, Body } from './src';
@@ -44,7 +44,7 @@ import { UsersService, User } from './users.service';
 
 @Controller('/users')
 export class UsersController {
-  // Framework sẽ tự tạo một phiên bản của UsersService và truyền nó vào đây!
+  // Library sẽ tự tạo một phiên bản của UsersService và truyền nó vào đây!
   constructor(private usersService: UsersService) {}
 
   @Post()
@@ -89,7 +89,7 @@ import { Module } from './src';
          await db.connect();
          return db; // Trả về Database instance để dùng chung trong toàn hệ thống
       },
-      // Thông số này chỉ dẫn framework tiêm Value Provider đã khai báo 
+      // Thông số này chỉ dẫn library tiêm Value Provider đã khai báo 
       // bên trên vào tham số `apiKey` ở constructor của hàm Factory
       inject: ['API_KEY'] 
     }

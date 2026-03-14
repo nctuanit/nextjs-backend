@@ -1,10 +1,10 @@
 # Bước đầu tiên (First Steps)
 
-Trong bài viết này, bạn sẽ làm quen với những khái niệm cơ bản nhất của framework Next.js-Backend. Để giúp bạn nhanh chóng nắm bắt các cấu trúc cốt lõi, chúng ta sẽ xem xét cách thiết lập và vận hành một ứng dụng cơ bản.
+Trong bài viết này, bạn sẽ làm quen với những khái niệm cơ bản nhất của library Next.js-Backend. Để giúp bạn nhanh chóng nắm bắt các cấu trúc cốt lõi, chúng ta sẽ xem xét cách thiết lập và vận hành một ứng dụng cơ bản.
 
 ## Yêu cầu
 
-Tiền đề để sử dụng framework là **Bun** phải được cài đặt trên hệ thống của bạn. Do framework phụ thuộc chủ yếu vào sức mạnh của ElysiaJS và các API nguyên bản (Native APIs) tốc độ cao, việc sử dụng môi trường chạy (runtime) Bun là yêu cầu bắt buộc.
+Tiền đề để sử dụng library là **Bun** phải được cài đặt trên hệ thống của bạn. Do library phụ thuộc chủ yếu vào sức mạnh của ElysiaJS và các API nguyên bản (Native APIs) tốc độ cao, việc sử dụng môi trường chạy (runtime) Bun là yêu cầu bắt buộc.
 
 ## Cài đặt
 
@@ -17,7 +17,7 @@ bun install
 
 ### Cấu hình TypeScript (Bắt buộc)
 
-Do kiến trúc của framework phụ thuộc hoàn toàn vào kỹ thuật Decorators, bạn **bắt buộc** phải bật các cờ thử nghiệm trong file `tsconfig.json` của dự án để trình biên dịch hiểu được các Annotation.
+Do kiến trúc của library phụ thuộc hoàn toàn vào kỹ thuật Decorators, bạn **bắt buộc** phải bật các cờ thử nghiệm trong file `tsconfig.json` của dự án để trình biên dịch hiểu được các Annotation.
 
 ```json
 {
@@ -30,7 +30,7 @@ Do kiến trúc của framework phụ thuộc hoàn toàn vào kỹ thuật Deco
 
 ## Chạy các mẫu thử (Samples)
 
-Cách nhanh nhất để hiểu về framework là chạy thử các dự án mẫu (samples) có sẵn trong dự án.
+Cách nhanh nhất để hiểu về library là chạy thử các dự án mẫu (samples) có sẵn trong dự án.
 
 Chúng tôi cung cấp một loạt các tập lệnh (scripts) để chạy các môi trường khác nhau:
 
@@ -50,7 +50,7 @@ bun run start:swagger
 
 ## Điểm Tích Hợp Ứng Dụng (Entry Point)
 
-Để khởi động toàn bộ hệ sinh thái của framework, bạn chỉ cần một module gốc (Root Module) và kết nối nó vào cấu trúc **Route Handlers** của Next.js (bên trong tệp `app/api/[[...slug]]/route.ts`). Mọi thao tác xử lý hệ thống mạng phức tạp nhất đều quy về `ElysiaFactory`.
+Để khởi động toàn bộ hệ sinh thái của library, bạn chỉ cần một module gốc (Root Module) và kết nối nó vào cấu trúc **Route Handlers** của Next.js (bên trong tệp `app/api/[[...slug]]/route.ts`). Mọi thao tác xử lý hệ thống mạng phức tạp nhất đều quy về `ElysiaFactory`.
 
 Cấu hình máy chủ Next.js của bạn giờ đây sẽ thanh thoát như sau:
 
@@ -75,4 +75,4 @@ export const { GET, POST, PUT, PATCH, DELETE, OPTIONS } = ElysiaFactory.createNe
 });
 ```
 
-Chỉ với một thao tác trích xuất `createNextJsHandlers`, máy móc framework sẽ tự động phân giải cấu hình, nhúng Injector và định tuyến yêu cầu từ Frontend thẳng tuột xuống Backend mà không gặp phải bất kỳ một rào cản cổng trung gian hay lỗi CORS nào!
+Chỉ với một thao tác trích xuất `createNextJsHandlers`, máy móc library sẽ tự động phân giải cấu hình, nhúng Injector và định tuyến yêu cầu từ Frontend thẳng tuột xuống Backend mà không gặp phải bất kỳ một rào cản cổng trung gian hay lỗi CORS nào!

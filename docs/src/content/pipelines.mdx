@@ -1,6 +1,6 @@
 # Execution Pipeline: Guards, Interceptors, Pipes
 
-The framework operates a strict execution pipeline per-request:
+The library operates a strict execution pipeline per-request:
 1. **Guards**: Determines if the request is authorized.
 2. **Interceptors**: Wraps the execution stream allowing pre/post execution logic.
 3. **Pipes**: Validates and transforms input payload.
@@ -80,7 +80,7 @@ Pipes have two typical use cases:
 - **Transformation**: Transform input data to the desired form (e.g., from string to integer)
 - **Validation**: Evaluate input data and if valid, simply pass it through unchanged; otherwise, throw an exception.
 
-The framework fully integrates with `class-validator` to mimic NestJS's strict and typed payload validation.
+The library fully integrates with `class-validator` to mimic NestJS's strict and typed payload validation.
 
 ### DTO (Data Transfer Object)
 

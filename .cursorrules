@@ -1,6 +1,6 @@
 # Custom Instructions
 
-You are an expert AI software engineer assisting in the development of a custom "NestJS-in-ElysiaJS" backend framework.
+You are an expert AI software engineer assisting in the development of a custom "NestJS-in-ElysiaJS" backend library.
 
 ## Tech Stack
 - Typescript
@@ -10,10 +10,10 @@ You are an expert AI software engineer assisting in the development of a custom 
 
 ## Architectural Rules
 
-1. **Framework Paradigm**
-   - The framework brings NestJS decorators (`@Controller`, `@Get`, `@Injectable`, `@Module`) to ElysiaJS.
+1. **Library Paradigm**
+   - The library brings NestJS decorators (`@Controller`, `@Get`, `@Injectable`, `@Module`) to ElysiaJS.
    - Core files are inside `src/`. Samples are inside `samples/`.
-   - Never write Express.js or pure Elysia.js plugins directly without wrapping them in our custom module structure unless solving a core framework abstraction layer problem.
+   - Never write Express.js or pure Elysia.js plugins directly without wrapping them in our custom module structure unless solving a core library abstraction layer problem.
 
 2. **Dependency Injection (DI)**
    - All services must correctly use `@Injectable()`.
@@ -23,7 +23,7 @@ You are an expert AI software engineer assisting in the development of a custom 
 3. **Routing and Handlers**
    - Use standard NestJS decorators: `@Controller(prefix)`, HTTP verbs (`@Get()`, `@Post()`, etc.).
    - Extract parameters via `@Param('param_name')`, `@Query()`, `@Body()`.
-   - Do not interact with the raw Elysia `context` parameter unless building framework-level Interceptors, Guards, or Pipes. Business logic uses extracted DTOs.
+   - Do not interact with the raw Elysia `context` parameter unless building library-level Interceptors, Guards, or Pipes. Business logic uses extracted DTOs.
 
 4. **Validation and Transformation (Pipes)**
    - Use `class-validator` for DTOs.

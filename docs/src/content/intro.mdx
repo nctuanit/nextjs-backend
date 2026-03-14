@@ -1,8 +1,8 @@
 # Giới thiệu
 
-**Next.js Backend** là một framework dành cho Node.js / Bun được xây dựng để tạo ra các ứng dụng backend linh hoạt, hiệu suất cao và dễ dàng mở rộng.
+**Next.js Backend** là một library dành cho Node.js / Bun được xây dựng để tạo ra các ứng dụng backend linh hoạt, hiệu suất cao và dễ dàng mở rộng.
 
-Ý tưởng ra đời của framework này bắt nguồn từ những **khó khăn và hạn chế** khi viết API trực tiếp bên trong hệ sinh thái của **Next.js** (Next.js API Routes / Route Handlers). Việc thiếu hụt một kiến trúc phần mềm rõ ràng, thiếu Dependency Injection và các luồng middleware tiêu chuẩn khiến cho việc quản lý các dự án Next.js Fullstack quy mô lớn trở nên phức tạp, khó bảo trì và vận hành.
+Ý tưởng ra đời của library này bắt nguồn từ những **khó khăn và hạn chế** khi viết API trực tiếp bên trong hệ sinh thái của **Next.js** (Next.js API Routes / Route Handlers). Việc thiếu hụt một kiến trúc phần mềm rõ ràng, thiếu Dependency Injection và các luồng middleware tiêu chuẩn khiến cho việc quản lý các dự án Next.js Fullstack quy mô lớn trở nên phức tạp, khó bảo trì và vận hành.
 
 Đó là lý do **Next.js Backend** ra đời - mang trọn vẹn sức mạnh và sự thanh lịch của **Kiến trúc NestJS** (Decorators, Dependency Injection, Modules) nhưng được gọt giũa để **chạy trực tiếp (nhúng ngầm) bên trong Next.js App Router API**. Đồng thời kết hợp với lõi tốc độ siêu cao như **ElysiaJS / Bun** để bạn không phải thiết lập các máy chủ proxy cồng kềnh.
 
@@ -10,7 +10,7 @@
 
 Javascript đã trở thành ngôn ngữ phổ biến nhất cho cả Front-end lẫn Back-end. Mặc dù có rất nhiều thư viện tuyệt vời cho Node/Bun (như Express, Fastify, Elysia), nhưng việc tìm kiếm một giải pháp mang lại một **Kiến trúc phần mềm** chuẩn mực vẫn là một thách thức lớn.
 
-Framework của chúng tôi cung cấp sẵn một kiến trúc chuẩn mực (Out-of-the-box), cho phép các lập trình viên và các nhóm phát triển xây dựng ứng dụng với độ liên kết lỏng lẻo (loosely coupled), dễ dàng thử nghiệm (test) và bảo trì, lấy cảm hứng trực tiếp từ những triết lý bền vững của Angular và NestJS.
+Library của chúng tôi cung cấp sẵn một kiến trúc chuẩn mực (Out-of-the-box), cho phép các lập trình viên và các nhóm phát triển xây dựng ứng dụng với độ liên kết lỏng lẻo (loosely coupled), dễ dàng thử nghiệm (test) và bảo trì, lấy cảm hứng trực tiếp từ những triết lý bền vững của Angular và NestJS.
 
 ## Tính năng nổi bật
 
@@ -25,6 +25,6 @@ Framework của chúng tôi cung cấp sẵn một kiến trúc chuẩn mực (O
 
 ## Dưới nắp capô (Under the Hood)
 
-Ở tầng thấp, framework sử dụng engine HTTP tốc độ cao của ElysiaJS để xử lý tầng mạng (network layer), trong khi phủ lên trên nó một lớp kiến trúc phần mềm vững chắc.
+Ở tầng thấp, library sử dụng engine HTTP tốc độ cao của ElysiaJS để xử lý tầng mạng (network layer), trong khi phủ lên trên nó một lớp kiến trúc phần mềm vững chắc.
 
 Điều này giúp bạn tận dụng được 100% kho plugin phong phú của Elysia (như Swagger, JWT, WebSockets) mà vẫn duy trì được cấu trúc mã nguồn theo chuẩn "Enterprise-ready" (Sẵn sàng cho doanh nghiệp).

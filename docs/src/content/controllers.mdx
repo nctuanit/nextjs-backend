@@ -4,7 +4,7 @@ Controllers chịu trách nhiệm tiếp nhận các **requests** (yêu cầu) t
 
 Mục đích chính của một controller là xử lý và điều hướng các yêu cầu cụ thể cho ứng dụng. Cơ chế **routing (định tuyến)** sẽ quyết định controller nào chịu trách nhiệm tiếp nhận yêu cầu nào. Thông thường, một controller có thể bao gồm nhiều đường dẫn (routes) khác nhau, và mỗi route có thể thực thi một hành động chuyên biệt.
 
-Để định nghĩa một controller, chúng ta sử dụng các lớp (classes) kết hợp với **decorators**. Decorator sẽ liên kết các metadata cần thiết với lớp đó, cho phép framework tự động thiết lập bản đồ định tuyến.
+Để định nghĩa một controller, chúng ta sử dụng các lớp (classes) kết hợp với **decorators**. Decorator sẽ liên kết các metadata cần thiết với lớp đó, cho phép library tự động thiết lập bản đồ định tuyến.
 
 ## Định tuyến (Routing)
 
@@ -28,11 +28,11 @@ export class UsersController {
 }
 ```
 
-Method decorator `@Get()` nằm trước phương thức `findAll()` cho framework biết rằng cần tạo một endpoint hỗ trợ phương thức HTTP GET. Do chúng ta đã thiết lập tiền tố `/users` tại cấp controller, đường dẫn đầy đủ của endpoint này sẽ là `GET /users`.
+Method decorator `@Get()` nằm trước phương thức `findAll()` cho library biết rằng cần tạo một endpoint hỗ trợ phương thức HTTP GET. Do chúng ta đã thiết lập tiền tố `/users` tại cấp controller, đường dẫn đầy đủ của endpoint này sẽ là `GET /users`.
 
 ## Trích xuất Request Object
 
-Thường thì các phương thức xử lý (route handlers) cần truy cập thông tin chi tiết từ phía người dùng gửi tới. Framework cung cấp cơ chế chuẩn mực để lấy thông tin request thông qua các parameter decorators chuyên biệt.
+Thường thì các phương thức xử lý (route handlers) cần truy cập thông tin chi tiết từ phía người dùng gửi tới. Library cung cấp cơ chế chuẩn mực để lấy thông tin request thông qua các parameter decorators chuyên biệt.
 
 Bạn có thể trích xuất từng thuộc tính của HTTP request bằng các decorators như `@Body()`, `@Param()`, `@Query()`, và `@Headers()`.
 
@@ -111,7 +111,7 @@ export class ContextController {
 
 ## Luồng Bất đồng bộ (Asynchronicity)
 
-Modern Javascript tận dụng tối đa khả năng xử lý bất đồng bộ. Vì vậy, mọi phương thức xử lý (route handlers) trong framework đều hỗ trợ cú pháp `async` một cách mặc định và có thể trả về một đối tượng `Promise`.
+Modern Javascript tận dụng tối đa khả năng xử lý bất đồng bộ. Vì vậy, mọi phương thức xử lý (route handlers) trong library đều hỗ trợ cú pháp `async` một cách mặc định và có thể trả về một đối tượng `Promise`.
 
 ```typescript
 @Get()

@@ -1,12 +1,12 @@
 # Bộ Lọc Ngoại Lệ (Exception Filters)
 
-Framework đi kèm với một lớp ngoại lệ (Exceptions Layer) tích hợp sẵn, chịu trách nhiệm xử lý toàn bộ các ngoại lệ không được bắt (unhandled exceptions) trong toàn bộ ứng dụng.
+Library đi kèm với một lớp ngoại lệ (Exceptions Layer) tích hợp sẵn, chịu trách nhiệm xử lý toàn bộ các ngoại lệ không được bắt (unhandled exceptions) trong toàn bộ ứng dụng.
 
 Khi một ngoại lệ xuất hiện mà không được hệ thống bắt (catch) thủ công bởi mã nguồn của bạn, nó sẽ được chuyển đến lớp này. Lớp ngoại lệ sẽ phân tích và tự động gửi một thông báo phản hồi (response) phù hợp và thân thiện đến client.
 
 ## Ném Ngoại lệ Tiêu chuẩn (`HttpException`)
 
-Framework cung cấp sẵn một lớp `HttpException` lấy từ tệp định nghĩa `@/src`. Đối với các ứng dụng REST hoặc GraphQL API thông dụng, việc gửi một đối tượng phản hồi HTTP tiêu chuẩn khi có điều kiện lỗi xảy ra là một phương pháp tốt (best practice).
+Library cung cấp sẵn một lớp `HttpException` lấy từ tệp định nghĩa `@/src`. Đối với các ứng dụng REST hoặc GraphQL API thông dụng, việc gửi một đối tượng phản hồi HTTP tiêu chuẩn khi có điều kiện lỗi xảy ra là một phương pháp tốt (best practice).
 
 ```typescript
 import { Controller, Get, HttpException } from './src';
@@ -31,7 +31,7 @@ Khi client gửi yêu cầu đến endpoint này, phản hồi nhận được s
 
 ## Xử lý Lỗi Hệ thống Tích hợp
 
-Bằng cách kế thừa cơ chế xử lý lỗi cục bộ thông qua hook `.error()` nguyên bản của Elysia, framework tự động thu thập và chuyển đổi định dạng:
+Bằng cách kế thừa cơ chế xử lý lỗi cục bộ thông qua hook `.error()` nguyên bản của Elysia, library tự động thu thập và chuyển đổi định dạng:
 - Các đối tượng `Error` tiêu chuẩn của Javascript.
 - **Ngoại lệ Xác thực (Validation Exceptions)**: Được tạo ra bởi bộ lọc `ValidationPipe`.
 
@@ -98,7 +98,7 @@ export class DatabaseExceptionFilter implements ExceptionFilter {
 
 ### Bước 2: Sử Dụng Filter (Gắn kết)
 
-Sử dụng Decorator `@UseFilters()` để gắn kết Filter của bạn vào từng Router riêng lẻ, hoặc toàn bộ Controller. Framework sẽ tự động nhúng Filter của bạn vào Dependency Injection và giải quyết nó:
+Sử dụng Decorator `@UseFilters()` để gắn kết Filter của bạn vào từng Router riêng lẻ, hoặc toàn bộ Controller. Library sẽ tự động nhúng Filter của bạn vào Dependency Injection và giải quyết nó:
 
 ```typescript
 // app.controller.ts

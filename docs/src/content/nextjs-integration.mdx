@@ -1,8 +1,8 @@
 # Tích Hợp Vào Route Next.js API
 
-Điểm mạnh nhất của **Next.js-Backend** là tính kế thừa nguyên bản sức mạnh của **ElysiaJS**, nền tảng tương thích tuyệt đối với chuẩn Web Standard và WinterCG. Điều này có nghĩa là mọi phương thức xử lý của framework đều tiếp nhận chuẩn `Request` và trả về chuẩn `Response` tiêu chuẩn.
+Điểm mạnh nhất của **Next.js-Backend** là tính kế thừa nguyên bản sức mạnh của **ElysiaJS**, nền tảng tương thích tuyệt đối với chuẩn Web Standard và WinterCG. Điều này có nghĩa là mọi phương thức xử lý của library đều tiếp nhận chuẩn `Request` và trả về chuẩn `Response` tiêu chuẩn.
 
-Nhờ lợi thế này, bạn có thể **nhúng thẳng toàn bộ ứng dụng Backend vào duy nhất một Route Catch-All của Next.js (App Router)** thay vì phải chạy máy chủ Bun trung gian. Framework sẽ trở thành một module nhận xử lý trực tiếp tất cả các yêu cầu từ cấu trúc giao diện của Next.js!
+Nhờ lợi thế này, bạn có thể **nhúng thẳng toàn bộ ứng dụng Backend vào duy nhất một Route Catch-All của Next.js (App Router)** thay vì phải chạy máy chủ Bun trung gian. Library sẽ trở thành một module nhận xử lý trực tiếp tất cả các yêu cầu từ cấu trúc giao diện của Next.js!
 
 ## Cấu Hình Tích Hợp Trên App Router
 
@@ -23,7 +23,7 @@ my-next-app/
 
 ### Triển Khai Gọi `createNextJsHandlers`
 
-Để đơn giản hóa hoàn toàn quy trình này, framework cung cấp sẵn một tiện ích sinh mã `createNextJsHandlers`. Bạn không cần phải khởi tạo các biến Singleton phức tạp. Chỉ cần truyền `AppModule` vào, framework sẽ tự động cung cấp lại toàn bộ các phương thức định tuyến xử lý gốc (GET, POST, PUT, DELETE,...) mà Next.js App Router yêu cầu phải export.
+Để đơn giản hóa hoàn toàn quy trình này, library cung cấp sẵn một tiện ích sinh mã `createNextJsHandlers`. Bạn không cần phải khởi tạo các biến Singleton phức tạp. Chỉ cần truyền `AppModule` vào, library sẽ tự động cung cấp lại toàn bộ các phương thức định tuyến xử lý gốc (GET, POST, PUT, DELETE,...) mà Next.js App Router yêu cầu phải export.
 
 Dưới đây là nội dung cài đặt cực kỳ tinh gọn của tệp `app/api/[[...slug]]/route.ts`:
 
