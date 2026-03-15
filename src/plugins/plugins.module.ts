@@ -1,14 +1,12 @@
 import { DynamicModule } from '../interfaces';
 import { Module } from '../decorators/module.decorator';
-import cors, { type CORSConfig } from '@elysiajs/cors';
-import { helmet } from 'elysia-helmet';
 
 export interface PluginsModuleOptions {
   /**
    * Enable & Configure CORS (Cross-Origin Resource Sharing).
    * Set to `true` for defaults or provide custom CORS config.
    */
-  cors?: boolean | CORSConfig;
+  cors?: boolean | Record<string, any>;
 
   /**
    * Enable & Configure Helmet (Security Headers).

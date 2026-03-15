@@ -12,7 +12,7 @@ import { DevModeService } from './dev-mode.service';
 export class DevModeLoggerMiddleware implements NestMiddleware {
     constructor(private devModeService: DevModeService) {}
 
-    async use(req: Request, res: any, next: () => void | Promise<void>) {
+    async use(req: Request, res: unknown, next: () => void | Promise<void>) {
         const start = performance.now();
         const url = new URL(req.url);
 
@@ -29,24 +29,24 @@ export class DevModeLoggerMiddleware implements NestMiddleware {
         // Since Elysia handles body parsing via plugins / native handlers,
         // intercepting the *exact* parsed body object at this pure middleware level is tricky 
         // without cloning the request. We will mark what we can and rely on interceptors for deeper hooks later if needed.
-        let bodyPayload: any = undefined;
-        try {
-            if (req.method !== 'GET' && req.method !== 'HEAD') {
-               const clonedReq = req.clone();
-               bodyPayload = await clonedReq.json().catch(() => clonedReq.text());
-            }
-        } catch(e) {}
+        let bodyPayload: unknown = undefined;
+        if (req.method !== 'GET' && req.method !== 'HEAD') {
+          const clonedReq = req.clone();
+          bodyPayload = await clonedReq.json().catch(() => clonedReq.text()).catch(() => undefined);
+        }
 
         let statusCode = (res as any)?.status || 200;
         let errorMessage: string | undefined = undefined;
+
 
         // Proceed with request
         try {
             await next();
             statusCode = (res as any)?.status || statusCode;
-        } catch(e: any) {
-            statusCode = e?.status || 500;
-            errorMessage = e?.message || String(e);
+        } catch(e: unknown) {
+            const err = e instanceof Error ? e : new Error(String(e));
+            statusCode = (e as { status?: number })?.status || 500;
+            errorMessage = err.message;
             throw e;
         } finally {
             const end = performance.now();

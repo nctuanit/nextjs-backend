@@ -5,16 +5,16 @@ export interface CanActivate {
   canActivate(context: Context): boolean | Promise<boolean>;
 }
 
-export interface NestMiddleware<TRequest = any, TResponse = any> {
-  use(req: TRequest, res: TResponse, next: () => void | Promise<void>): any | Promise<any>;
+export interface NestMiddleware<TRequest = unknown, TResponse = unknown> {
+  use(req: TRequest, res: TResponse, next: () => void | Promise<void>): void | Promise<void>;
 }
 
-export interface NestInterceptor<T = any, R = any> {
-  intercept(context: any, next: () => Promise<R>): Promise<R>;
+export interface NestInterceptor<T = unknown, R = unknown> {
+  intercept(context: Context, next: () => Promise<R>): Promise<R>;
 }
 
-export interface ExceptionFilter<T = any> {
-  catch(exception: T, context: any): any | Promise<any>;
+export interface ExceptionFilter<T = unknown> {
+  catch(exception: T, context: Context): unknown | Promise<unknown>;
 }
 
 export interface PipeTransform<T = unknown, R = unknown> {

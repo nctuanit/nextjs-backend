@@ -31,7 +31,7 @@ class UsersController {
     }
 
     @Post()
-    createUser(@Body() body: any) {
+    createUser(@Body() body: Record<string, unknown>) {
         return { created: true, data: body };
     }
 

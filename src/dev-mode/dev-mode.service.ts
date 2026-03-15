@@ -1,4 +1,5 @@
 import { Injectable } from '../di/injectable.decorator';
+import { Inject } from '../di/inject.decorator';
 import { Logger } from '../services/logger.service';
 
 export interface RequestProfile {
@@ -10,8 +11,8 @@ export interface RequestProfile {
   timestamp: Date;
   headers: Record<string, string>;
   query?: Record<string, any>;
-  body?: any;
-  response?: any;
+  body?: unknown;
+  response?: unknown;
   error?: string;
 }
 
@@ -36,7 +37,7 @@ export interface DevModeConfig {
 
 export const DEV_MODE_CONFIG = 'DEV_MODE_CONFIG';
 
-import { Inject } from '../di/inject.decorator';
+
 
 @Injectable()
 export class DevModeService {

@@ -4,13 +4,15 @@ import { type Provider, type InjectionToken, type Type } from './provider';
 // Internal type to keep track of provider definitions
 type ProviderWrapper = {
   isResolved: boolean;
-  instance: any;
+  instance: unknown;
   provider: Provider;
 };
 
 export class Container {
   // Store raw providers and their resolved instances by Token
   private providers = new Map<InjectionToken, ProviderWrapper>();
+  // Track tokens currently being resolved to detect circular dependencies
+  private resolving = new Set<InjectionToken>();
 
   /**
    * Clears all registered providers and singletons.
@@ -44,26 +46,40 @@ export class Container {
     // If perfectly registered provider exists
     if (wrapper) {
       if (wrapper.isResolved) {
-        return wrapper.instance;
+        return wrapper.instance as T;
       }
 
-      const p = wrapper.provider;
-
-      if (typeof p === 'function') {
-         wrapper.instance = await this.instantiateClass(p);
-      } else if ('useValue' in p) {
-         wrapper.instance = p.useValue;
-      } else if ('useFactory' in p) {
-         const injections = p.inject ? await Promise.all(p.inject.map(t => this.resolve(t))) : [];
-         wrapper.instance = await p.useFactory(...injections);
-      } else if ('useClass' in p) {
-         wrapper.instance = await this.instantiateClass(p.useClass);
-      } else if ('useExisting' in p) {
-         wrapper.instance = await this.resolve(p.useExisting);
+      // Circular dependency detection
+      if (this.resolving.has(token)) {
+        const tokenName = typeof token === 'function' ? token.name : String(token);
+        throw new Error(
+          `Circular dependency detected while resolving "${tokenName}". ` +
+          `Check your provider dependency graph.`,
+        );
       }
 
-      wrapper.isResolved = true;
-      return wrapper.instance;
+      this.resolving.add(token);
+      try {
+        const p = wrapper.provider;
+
+        if (typeof p === 'function') {
+           wrapper.instance = await this.instantiateClass(p);
+        } else if ('useValue' in p) {
+           wrapper.instance = p.useValue;
+        } else if ('useFactory' in p) {
+           const injections = p.inject ? await Promise.all(p.inject.map(t => this.resolve(t))) : [];
+           wrapper.instance = await p.useFactory(...injections);
+        } else if ('useClass' in p) {
+           wrapper.instance = await this.instantiateClass(p.useClass);
+        } else if ('useExisting' in p) {
+           wrapper.instance = await this.resolve(p.useExisting);
+        }
+
+        wrapper.isResolved = true;
+      } finally {
+        this.resolving.delete(token);
+      }
+      return wrapper.instance as T;
     }
 
     // Fallback: If token directly is a class but not explicitly provided, try to instantiate it (matching old behavior)
@@ -85,7 +101,7 @@ export class Container {
     const customInjections: { index: number, token: InjectionToken }[] = Reflect.getMetadata('custom:inject', target) || [];
 
     // Resolve all dependencies
-    const injections = await Promise.all(tokens.map((token: any, index: number) => {
+    const injections = await Promise.all(tokens.map((token: InjectionToken, index: number) => {
       const customInjection = customInjections.find(ci => ci.index === index);
       const resolveToken = customInjection ? customInjection.token : token;
       return this.resolve(resolveToken);

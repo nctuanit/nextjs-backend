@@ -19,5 +19,12 @@ logo.png
 .git
 .gitignore
 .vscode
+.cursor
+.cursorrules
 .gemini
 __pycache__
+
+# Temp and meta
+tmp/
+llms.txt
+jsr.json

@@ -3,10 +3,10 @@ import 'reflect-metadata';
 import { MODULE_METADATA } from '../constants';
 
 export interface ModuleMetadata {
-  imports?: any[];
-  controllers?: any[];
-  providers?: any[];
-  exports?: any[];
+  imports?: unknown[];
+  controllers?: unknown[];
+  providers?: unknown[];
+  exports?: unknown[];
 }
 
 /**

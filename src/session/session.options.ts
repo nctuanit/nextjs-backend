@@ -3,7 +3,7 @@ import type { SessionStore } from './session.store';
 
 export interface SessionModuleOptions {
   /**
-   * Secret string used to sign the cookie.`
+   * Secret string used to sign the cookie.
    * If provided, the cookie becomes tamper-proof (HttpOnly and Signed).
    */
   secret?: string;

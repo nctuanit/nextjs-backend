@@ -1,0 +1,88 @@
+# CLI Tool
+
+next-js-backend comes with a powerful CLI to scaffold projects and generate code.
+
+## Installation
+
+The CLI is included with the package. Use it via `npx` or `bunx`:
+
+```bash
+npx next-js-backend --help
+```
+
+## Create a New Project
+
+```bash
+npx next-js-backend new my-api
+```
+
+This generates a complete project structure:
+
+```
+my-api/
+├── src/
+│   ├── main.ts
+│   └── modules/app/
+│       ├── app.module.ts
+│       ├── app.controller.ts
+│       └── app.service.ts
+├── package.json
+├── tsconfig.json
+├── .env
+└── .gitignore
+```
+
+Then install and run:
+
+```bash
+cd my-api
+bun install
+bun run dev
+```
+
+## Generate Code
+
+Generate modules, controllers, services, guards, and interceptors:
+
+```bash
+# Module
+npx next-js-backend g module users
+
+# Controller
+npx next-js-backend g controller users
+
+# Service
+npx next-js-backend g service users
+
+# Guard
+npx next-js-backend g guard auth
+
+# Interceptor
+npx next-js-backend g interceptor logging
+
+# Resource (module + controller + service)
+npx next-js-backend g resource products
+```
+
+### Resource Generator
+
+The `resource` generator creates a full CRUD scaffold:
+
+```bash
+npx next-js-backend g resource products
+```
+
+Creates:
+- `src/modules/products/products.module.ts`
+- `src/modules/products/products.controller.ts`
+- `src/modules/products/products.service.ts`
+
+## Eden Type Generation
+
+Generate type-safe Eden Treaty client types:
+
+```bash
+npx next-js-backend eden:generate src/app.module.ts --output src/eden.ts
+```
+
+See [Eden Treaty](/eden-treaty) for more details.

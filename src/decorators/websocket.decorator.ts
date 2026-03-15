@@ -4,6 +4,7 @@ import { Injectable } from '../di/injectable.decorator';
 export const GATEWAY_METADATA = 'websocket_gateway';
 export const PATTERN_METADATA = 'websocket_pattern';
 export const MESSAGE_MAPPING_METADATA = 'websocket_message_mapping';
+export const WS_SERVER_METADATA = 'websocket_server';
 
 export interface GatewayOptions {
   path?: string;
@@ -31,4 +32,34 @@ export function SubscribeMessage(message: string): MethodDecorator {
     Reflect.defineMetadata(PATTERN_METADATA, message, descriptor.value);
     return descriptor;
   };
+}
+
+/**
+ * Injects the WebSocket server instance into a property.
+ * Used inside a @WebSocketGateway() class.
+ *
+ * @example
+ * ```ts
+ * @WebSocketGateway()
+ * export class ChatGateway {
+ *   @WebSocketServer()
+ *   server!: WsServer;
+ * }
+ * ```
+ */
+export function WebSocketServer(): PropertyDecorator {
+  return (target: object, propertyKey: string | symbol) => {
+    Reflect.defineMetadata(WS_SERVER_METADATA, propertyKey, target.constructor);
+  };
+}
+
+/**
+ * Type for the WebSocket server instance.
+ * Provides methods for managing connected clients.
+ */
+export interface WsServer {
+  /** Publish data to a specific topic/channel */
+  publish(topic: string, data: string | BufferSource): void;
+  /** Number of connected subscribers for a topic */
+  subscriberCount(topic: string): number;
 }

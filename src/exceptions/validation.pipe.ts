@@ -1,7 +1,7 @@
 import { validate, type ValidationError } from 'class-validator';
 import { plainToInstance } from 'class-transformer';
 import { type PipeTransform, type ArgumentMetadata } from '../interfaces';
-import { BadRequestException } from './http.exception';
+import { BadRequestException } from './index';
 import { type Context } from 'elysia';
 
 export interface ValidationPipeOptions {
@@ -14,7 +14,7 @@ export interface ValidationPipeOptions {
 export class ValidationPipe implements PipeTransform {
   constructor(private options: ValidationPipeOptions = { transform: true, whitelist: true }) {}
 
-  async transform(value: any, metadata: ArgumentMetadata, context?: Context) {
+  async transform(value: unknown, metadata: ArgumentMetadata, context?: Context) {
     if (!metadata.metatype || !this.toValidate(metadata.metatype as Function)) {
       return value;
     }
@@ -27,14 +27,8 @@ export class ValidationPipe implements PipeTransform {
         } catch(e) {}
     }
 
-    let object;
-    let errors;
-    try {
-      object = plainToInstance(metadata.metatype as any, parseValue);
-      errors = await validate(object, this.options);
-    } catch(e) {
-      throw e;
-    }
+    const object = plainToInstance(metadata.metatype as any, parseValue as object);
+    const errors = await validate(object as object, this.options);
 
     if (errors.length > 0) {
       const messages = this.formatErrors(errors);

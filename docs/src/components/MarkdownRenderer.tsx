@@ -9,7 +9,7 @@ interface Props {
 
 export function MarkdownRenderer({ content }: Props) {
   return (
-    <article className="prose prose-zinc dark:prose-invert max-w-none prose-headings:font-bold prose-h1:text-4xl prose-h1:tracking-tight prose-a:text-primary prose-a:no-underline hover:prose-a:underline prose-code:before:content-none prose-code:after:content-none prose-pre:bg-[#1E1E1E] prose-pre:p-0 prose-pre:border prose-pre:border-border/50">
+    <article className="prose prose-zinc dark:prose-invert max-w-3xl w-full prose-headings:font-bold prose-h1:text-4xl prose-h1:tracking-tight prose-a:text-primary prose-a:no-underline hover:prose-a:underline prose-code:before:content-none prose-code:after:content-none prose-pre:bg-[#1E1E1E] prose-pre:p-0 prose-pre:border prose-pre:border-border/50">
       <ReactMarkdown
         remarkPlugins={[remarkGfm]}
         components={{

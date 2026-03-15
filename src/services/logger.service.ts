@@ -1,11 +1,11 @@
 import { Injectable } from '../di/injectable.decorator';
 
 export interface LoggerService {
-  log(message: unknown, context?: string): any;
-  error(message: unknown, trace?: string, context?: string): any;
-  warn(message: unknown, context?: string): any;
-  debug?(message: unknown, context?: string): any;
-  verbose?(message: unknown, context?: string): any;
+  log(message: unknown, context?: string): void;
+  error(message: unknown, trace?: string, context?: string): void;
+  warn(message: unknown, context?: string): void;
+  debug?(message: unknown, context?: string): void;
+  verbose?(message: unknown, context?: string): void;
 }
 
 export type LogLevel = 'log' | 'error' | 'warn' | 'debug' | 'verbose';
@@ -13,6 +13,14 @@ export type LogLevel = 'log' | 'error' | 'warn' | 'debug' | 'verbose';
 @Injectable()
 export class ConsoleLogger implements LoggerService {
   private static lastTimestamp = Date.now();
+  private static readonly colors: Record<string, string> = {
+    green: '\x1b[32m',
+    yellow: '\x1b[33m',
+    red: '\x1b[31m',
+    magenta: '\x1b[35m',
+    cyan: '\x1b[36m',
+    reset: '\x1b[0m',
+  };
   protected context?: string;
 
   constructor(context?: string) {
@@ -58,19 +66,12 @@ export class ConsoleLogger implements LoggerService {
     ConsoleLogger.lastTimestamp = currentTimestamp;
     
     // Formatting with basic ANSI colors for console
-    const colors: Record<string, string> = {
-      green: '\x1b[32m',
-      yellow: '\x1b[33m',
-      red: '\x1b[31m',
-      magenta: '\x1b[35m',
-      cyan: '\x1b[36m',
-      reset: '\x1b[0m',
-    };
+    const c = ConsoleLogger.colors;
 
-    const cLevel = `${colors[color]}[Next.js-Backend] ${pid}  - \x1b[0m`;
+    const cLevel = `${c[color]}[Next.js-Backend] ${pid}  - \x1b[0m`;
     const cTimestamp = `${timestamp}     `;
     const cContext = `\x1b[33m${contextString}\x1b[0m`;
-    const cMessage = `${colors[color]}${output}\x1b[0m`;
+    const cMessage = `${c[color]}${output}\x1b[0m`;
     const cDiff = `\x1b[33m+${diff}ms\x1b[0m`;
 
     console.log(`${cLevel}${cTimestamp}${level} ${cContext}${cMessage} ${cDiff}`);

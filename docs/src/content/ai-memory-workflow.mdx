@@ -1,0 +1,171 @@
+# Memory & Workflow Engine
+
+## Memory System
+
+Lưu trữ lịch sử hội thoại theo `sessionId` để agent "nhớ" ngữ cảnh giữa các lượt chat.
+
+### InMemoryMemoryStore (Mặc định)
+
+Phù hợp cho development hoặc single-instance deployment:
+
+```typescript
+import { AiModule } from 'next-js-backend';
+import { InMemoryMemoryStore } from 'next-js-backend/ai';
+
+AiModule.register({
+  providers: [...],
+  agents: [SupportAgent],
+  memory: new InMemoryMemoryStore(), // mặc định nếu không chỉ định
+})
+```
+
+### RedisMemoryStore (Production)
+
+Lưu lịch sử persistent trong Redis, hỗ trợ TTL và giới hạn số tin nhắn:
+
+```typescript
+import Redis from 'ioredis';
+import { RedisMemoryStore } from 'next-js-backend/ai';
+
+const redis = new Redis(process.env.REDIS_URL);
+
+AiModule.register({
+  providers: [...],
+  agents: [SupportAgent],
+  memory: new RedisMemoryStore({
+    client: redis,
+    ttl: 3600,           // session hết hạn sau 1 giờ
+    maxMessages: 100,    // giới hạn 100 tin nhắn / session
+    keyPrefix: 'ai:mem:', // prefix Redis key
+  }),
+})
+```
+
+### Custom Memory Store
+
+Implement interface `MemoryStore` để tích hợp với bất kỳ storage nào:
+
+```typescript
+import type { MemoryStore, ChatMessage } from 'next-js-backend/ai';
+
+export class PrismaMemoryStore implements MemoryStore {
+  async save(sessionId: string, messages: ChatMessage[]): Promise<void> {
+    await db.aiSession.upsert({
+      where: { id: sessionId },
+      create: { id: sessionId, messages: JSON.stringify(messages) },
+      update: { messages: JSON.stringify(messages) },
+    });
+  }
+
+  async load(sessionId: string): Promise<ChatMessage[]> {
+    const session = await db.aiSession.findUnique({ where: { id: sessionId } });
+    return session ? JSON.parse(session.messages) : [];
+  }
+
+  async append(sessionId: string, message: ChatMessage): Promise<void> {
+    const existing = await this.load(sessionId);
+    existing.push(message);
+    await this.save(sessionId, existing);
+  }
+
+  async clear(sessionId: string): Promise<void> {
+    await db.aiSession.delete({ where: { id: sessionId } });
+  }
+}
+```
+
+### Sử dụng Memory với AiService
+
+```typescript
+// Lần 1
+await ai.run('SupportAgent', 'Tôi muốn đặt đơn hàng', { sessionId: 'user-123' });
+
+// Lần 2 — agent nhớ ngữ cảnh từ lần 1
+await ai.run('SupportAgent', 'Tổng cộng bao nhiêu?', { sessionId: 'user-123' });
+
+// Xóa session
+await ai.clearSession('user-123');
+```
+
+---
+
+## Workflow Engine
+
+**WorkflowRuntime** cho phép thực thi các quy trình nghiệp vụ phức tạp với nhiều bước, hỗ trợ retry, điều kiện và thực thi song song.
+
+### Định nghĩa Workflow
+
+```typescript
+import { Workflow, Step } from 'next-js-backend';
+
+@Workflow({ name: 'OnboardingWorkflow' })
+export class OnboardingWorkflow {
+  @Step({ order: 1, name: 'ValidateInput' })
+  async validateInput(ctx: WorkflowContext) {
+    const email = ctx.get<string>('email');
+    if (!email?.includes('@')) throw new Error('Email không hợp lệ');
+    ctx.set('validated', true);
+  }
+
+  @Step({ order: 2, name: 'CreateAccount' })
+  async createAccount(ctx: WorkflowContext) {
+    const email = ctx.get<string>('email');
+    const userId = await userService.create({ email });
+    ctx.set('userId', userId);
+  }
+
+  @Step({ order: 3, name: 'SendWelcomeEmail', retries: 2 })
+  async sendWelcome(ctx: WorkflowContext) {
+    const userId = ctx.get<string>('userId');
+    await emailService.sendWelcome(userId);
+  }
+}
+```
+
+### Chạy Workflow
+
+```typescript
+const workflow = new OnboardingWorkflow();
+
+const result = await this.ai.runWorkflow(workflow, {
+  email: 'user@example.com',
+});
+
+console.log(result.status);  // 'completed' | 'failed'
+console.log(result.steps);   // [{ name, status, duration }]
+console.log(result.context.get('userId')); // kết quả từ step 2
+```
+
+### Tính năng nâng cao
+
+```typescript
+// Parallel steps (cùng order → chạy song song)
+@Step({ order: 2, name: 'FetchUser' })
+async fetchUser(ctx: WorkflowContext) { ... }
+
+@Step({ order: 2, name: 'FetchOrders' })
+async fetchOrders(ctx: WorkflowContext) { ... }
+
+// Conditional step (chỉ chạy khi điều kiện thỏa mãn)
+@Step({
+  order: 3,
+  name: 'SendPromoEmail',
+  when: (ctx) => ctx.get<boolean>('isPremiumUser') === true,
+})
+async sendPromoEmail(ctx: WorkflowContext) { ... }
+
+// Retry với exponential backoff
+@Step({ order: 4, name: 'Webhook', retries: 3 })
+async callWebhook(ctx: WorkflowContext) {
+  await fetch('https://api.example.com/webhook', { method: 'POST' });
+}
+```
+
+### WorkflowContext API
+
+```typescript
+ctx.set('key', value);           // Lưu giá trị vào context
+ctx.get<Type>('key');            // Lấy giá trị có type
+ctx.getAll();                    // Lấy toàn bộ context
+ctx.merge({ a: 1, b: 2 });      // Merge object vào context
+```

@@ -1,191 +1,412 @@
 #!/usr/bin/env bun
+export {};
 /**
- * Eden Type Generator
- * 
- * Generates a `.d.ts` file from your NestJS-style decorators so that
- * @elysiajs/eden can infer routes at compile time.
- * 
+ * Eden Type Generator v3 — AST-powered, auto-inferring
+ *
+ * Features:
+ *   - TypeScript Compiler API for return type + body + query inference
+ *   - Named interfaces (clean, reusable)
+ *   - Path params (:id) support
+ *   - Query params (@Query) support
+ *   - --watch mode for auto-regeneration
+ *
  * Usage:
- *   bun run scripts/eden-generate.ts ./path/to/app.module.ts
- *   bun run scripts/eden-generate.ts ./path/to/app.module.ts --output ./eden.d.ts
- * 
- * The generated file exports an `App` type that you can use with Eden Treaty:
- *   import type { App } from './eden';
- *   const api = treaty<App>('http://localhost:3000');
- *   const { data } = await api.users.get(); // ✅ Full autocomplete!
+ *   bun run eden:generate <module> --output <path>
+ *   bun run eden:generate <module> --output <path> --watch
  */
+import ts from 'typescript';
+import path from 'path';
+import fs from 'fs';
 import 'reflect-metadata';
 import { CONTROLLER_WATERMARK, PATH_METADATA, METHOD_METADATA, MODULE_METADATA, ROUTE_ARGS_METADATA } from '../src/constants';
 import { RequestMethod } from '../src/decorators/method.decorator';
 import { SSE_METADATA } from '../src/decorators/sse.decorator';
-import { RouteParamtypes, type RouteParamMetadata } from '../src/decorators/param.decorator';
-import type { Type, Provider } from '../src/di/provider';
+import { RouteParamtypes } from '../src/decorators/param.decorator';
+import type { Type } from '../src/di/provider';
 
-interface RouteInfo {
-  path: string;
-  method: string;
-  hasBody: boolean;
-  bodyFields: string[];
-  returnType: string;
-}
+// ─── CLI ─────────────────────────────────────────────────────────
 
-// Parse CLI args
-const args = process.argv.slice(2);
-const modulePath = args[0];
-const outputIdx = args.indexOf('--output');
-const outputPath = outputIdx !== -1 ? args[outputIdx + 1] : undefined;
+const cliArgs = process.argv.slice(2);
+const modulePath = cliArgs.find(a => !a.startsWith('--'));
+const outputIdx = cliArgs.indexOf('--output');
+const outputPath = outputIdx !== -1 ? cliArgs[outputIdx + 1] : undefined;
+const watchMode = cliArgs.includes('--watch');
 
 if (!modulePath) {
-  console.error('❌ Usage: bun run scripts/eden-generate.ts <module-path> [--output <output-path>]');
-  console.error('   Example: bun run scripts/eden-generate.ts samples/eden-treaty/src/app.module.ts');
+  console.error(`
+  Eden Type Generator v3
+
+  Usage:
+    bun run eden:generate <module-path> --output <output-path> [--watch]
+
+  Example:
+    bun run eden:generate src/app.module.ts --output src/eden.ts
+    bun run eden:generate src/app.module.ts --output src/eden.ts --watch
+  `);
   process.exit(1);
 }
 
-// Dynamically import the module
-const moduleFile = await import(Bun.resolveSync('./' + modulePath, process.cwd()));
-const AppModule = moduleFile.AppModule || moduleFile.default || Object.values(moduleFile)[0];
+// ─── Core Generation ─────────────────────────────────────────────
 
-if (!AppModule) {
-  console.error(`❌ Could not find AppModule export in ${modulePath}`);
-  process.exit(1);
-}
+async function generate() {
+  const startTime = Date.now();
 
-// Recursively extract controllers from modules (same logic as ElysiaFactory)
-const controllers: Type<unknown>[] = [];
-const resolvedModules = new Set<unknown>();
+  // Step 1: Import module + extract controllers
+  // Clear require cache for watch mode
+  delete require.cache[Bun.resolveSync('./' + modulePath!, process.cwd())];
 
-function resolveModule(mod: any) {
-  if (mod && typeof mod === 'object' && 'module' in mod) {
-    if (resolvedModules.has(mod.module)) return;
-    resolvedModules.add(mod.module);
-    if (mod.controllers) controllers.push(...mod.controllers);
-    const dynImports = mod.imports || [];
-    for (const imp of dynImports) resolveModule(imp);
-    resolveModule(mod.module);
+  const moduleFile = await import(Bun.resolveSync('./' + modulePath!, process.cwd()));
+  const AppModule = moduleFile.AppModule || moduleFile.default || Object.values(moduleFile)[0];
+
+  if (!AppModule) {
+    console.error(`❌ Could not find AppModule in ${modulePath}`);
     return;
   }
 
-  if (resolvedModules.has(mod)) return;
-  resolvedModules.add(mod);
+  const controllers: Type<unknown>[] = [];
+  const resolved = new Set<unknown>();
 
-  const modControllers = Reflect.getMetadata(MODULE_METADATA.CONTROLLERS, mod) || [];
-  const modImports = Reflect.getMetadata(MODULE_METADATA.IMPORTS, mod) || [];
+  function walk(mod: any) {
+    if (mod && typeof mod === 'object' && 'module' in mod) {
+      if (resolved.has(mod.module)) return;
+      resolved.add(mod.module);
+      if (mod.controllers) controllers.push(...mod.controllers);
+      for (const imp of (mod.imports || [])) walk(imp);
+      walk(mod.module);
+      return;
+    }
+    if (resolved.has(mod)) return;
+    resolved.add(mod);
+    controllers.push(...(Reflect.getMetadata(MODULE_METADATA.CONTROLLERS, mod) || []));
+    for (const imp of (Reflect.getMetadata(MODULE_METADATA.IMPORTS, mod) || [])) walk(imp);
+  }
+  walk(AppModule);
 
-  controllers.push(...modControllers);
-  for (const imp of modImports) resolveModule(imp);
-}
+  // Step 2: Extract routes from decorators
+  interface Route {
+    ctrl: string;
+    path: string;
+    method: string;
+    methodName: string;
+    hasBody: boolean;
+    hasQuery: boolean;
+    hasParams: boolean;
+    queryKey?: string;
+    paramKeys: string[];
+  }
 
-resolveModule(AppModule);
+  const routes: Route[] = [];
 
-// Extract route information from controllers
-const routes: RouteInfo[] = [];
+  for (const ctrl of controllers) {
+    const target = ctrl as new (...a: any[]) => any;
+    if (!Reflect.getMetadata(CONTROLLER_WATERMARK, target)) continue;
 
-for (const controllerClass of controllers) {
-  const constructorTarget = controllerClass as new (...args: unknown[]) => unknown;
-  const isController = Reflect.getMetadata(CONTROLLER_WATERMARK, constructorTarget);
-  if (!isController) continue;
+    const prefix = Reflect.getMetadata(PATH_METADATA, target) || '';
+    const normPrefix = prefix === '/' ? '' : prefix;
 
-  const prefix = Reflect.getMetadata(PATH_METADATA, constructorTarget) || '';
-  const normalizedPrefix = prefix === '/' ? '' : prefix;
-  const prototype = constructorTarget.prototype;
-  const methodsNames = Object.getOwnPropertyNames(prototype).filter(
-    (method) => method !== 'constructor' && typeof prototype[method] === 'function',
-  );
+    for (const mn of Object.getOwnPropertyNames(target.prototype)) {
+      if (mn === 'constructor' || typeof target.prototype[mn] !== 'function') continue;
+      const fn = target.prototype[mn];
 
-  for (const methodName of methodsNames) {
-    const methodFn = prototype[methodName];
+      // SSE
+      const ssePath: string | undefined = Reflect.getMetadata(SSE_METADATA, fn);
+      if (ssePath) {
+        const fp = `${normPrefix}${ssePath === '/' ? '' : ssePath}` || '/';
+        routes.push({ ctrl: target.name, path: fp, method: 'get', methodName: mn, hasBody: false, hasQuery: false, hasParams: false, paramKeys: [] });
+        continue;
+      }
 
-    // Check for SSE endpoints
-    const ssePath: string | undefined = Reflect.getMetadata(SSE_METADATA, methodFn);
-    if (ssePath) {
-      let fullPath = `${normalizedPrefix}${ssePath === '/' ? '' : ssePath}`;
-      if (!fullPath) fullPath = '/';
+      // HTTP
+      const httpMethod: RequestMethod = Reflect.getMetadata(METHOD_METADATA, fn);
+      if (!httpMethod) continue;
+
+      const pm = Reflect.getMetadata(PATH_METADATA, fn) || '/';
+      let fp = `${normPrefix}${pm === '/' ? '' : pm}` || '/';
+
+      const args = Reflect.getMetadata(ROUTE_ARGS_METADATA, target, mn) || {};
+      const hasBody = Object.keys(args).some(k => Number(k.split(':')[0]) === RouteParamtypes.BODY);
+      const hasQuery = Object.keys(args).some(k => Number(k.split(':')[0]) === RouteParamtypes.QUERY);
+      const hasParams = Object.keys(args).some(k => Number(k.split(':')[0]) === RouteParamtypes.PARAM);
+
+      // Extract param keys from path
+      const paramKeys = (fp.match(/:(\w+)/g) || []).map(p => p.slice(1));
+
       routes.push({
-        path: fullPath,
-        method: 'get',
-        hasBody: false,
-        bodyFields: [],
-        returnType: 'unknown',
+        ctrl: target.name, path: fp, method: httpMethod === RequestMethod.DELETE ? 'delete' : httpMethod,
+        methodName: mn, hasBody, hasQuery, hasParams, paramKeys,
       });
-      continue;
+    }
+  }
+
+  // Step 3: TypeScript Compiler API — extract types
+  const moduleDir = path.dirname(path.resolve(process.cwd(), modulePath!));
+  const sourceFiles = new Set<string>();
+  const ctrlSourceMap = new Map<string, string>();
+
+  // Scan source files
+  for (const file of new Bun.Glob('**/*.ts').scanSync({ cwd: moduleDir })) {
+    const fp = path.join(moduleDir, file);
+    sourceFiles.add(fp);
+    const content = fs.readFileSync(fp, 'utf-8');
+    for (const route of routes) {
+      if (content.includes(`class ${route.ctrl}`) && !ctrlSourceMap.has(route.ctrl)) {
+        ctrlSourceMap.set(route.ctrl, fp);
+      }
+    }
+  }
+
+  // Build TS program
+  let opts: ts.CompilerOptions = {
+    target: ts.ScriptTarget.ESNext, module: ts.ModuleKind.ESNext,
+    moduleResolution: ts.ModuleResolutionKind.Bundler,
+    experimentalDecorators: true, emitDecoratorMetadata: true,
+    strict: true, skipLibCheck: true,
+  };
+  const cfgPath = ts.findConfigFile(moduleDir, ts.sys.fileExists, 'tsconfig.json');
+  if (cfgPath) {
+    const p = ts.readConfigFile(cfgPath, ts.sys.readFile);
+    if (p.config) opts = { ...opts, ...ts.convertCompilerOptionsFromJson(p.config.compilerOptions || {}, moduleDir).options };
+  }
+
+  const program = ts.createProgram([...sourceFiles], opts);
+  const checker = program.getTypeChecker();
+
+  // Type extraction helpers
+  function resolveType(type: ts.Type, depth = 0): string {
+    if (depth > 5) return 'any';
+
+    // Array
+    if (checker.isArrayType(type)) {
+      const args = checker.getTypeArguments(type as ts.TypeReference);
+      return args.length > 0 ? `${resolveType(args[0], depth + 1)}[]` : 'any[]';
     }
 
-    // Check for regular HTTP endpoints
-    const httpMethod: RequestMethod = Reflect.getMetadata(METHOD_METADATA, methodFn);
-    if (!httpMethod) continue;
+    // Promise<T>
+    const sym = type.getSymbol();
+    if (sym?.name === 'Promise') {
+      const args = checker.getTypeArguments(type as ts.TypeReference);
+      return args.length > 0 ? resolveType(args[0], depth + 1) : 'any';
+    }
 
-    const pathMetadata = Reflect.getMetadata(PATH_METADATA, methodFn) || '/';
-    let fullPath = `${normalizedPrefix}${pathMetadata === '/' ? '' : pathMetadata}`;
-    if (!fullPath) fullPath = '/';
+    // Primitives
+    if (type.flags & ts.TypeFlags.String) return 'string';
+    if (type.flags & ts.TypeFlags.Number) return 'number';
+    if (type.flags & ts.TypeFlags.Boolean || type.flags & ts.TypeFlags.BooleanLiteral) return 'boolean';
+    if (type.flags & ts.TypeFlags.Null) return 'null';
+    if (type.flags & ts.TypeFlags.Undefined) return 'undefined';
+    if (type.flags & ts.TypeFlags.Void) return 'void';
+    if (type.flags & ts.TypeFlags.Any) return 'any';
 
-    // Check if the method accepts a body
-    const routeArgs = Reflect.getMetadata(ROUTE_ARGS_METADATA, constructorTarget, methodName) || {};
-    const hasBody = Object.keys(routeArgs).some((key) => {
-      const paramType = Number(key.split(':')[0]) as RouteParamtypes;
-      return paramType === RouteParamtypes.BODY;
-    });
+    // Union
+    if (type.isUnion()) return type.types.map(t => resolveType(t, depth + 1)).join(' | ');
 
-    routes.push({
-      path: fullPath,
-      method: httpMethod,
-      hasBody,
-      bodyFields: [],
-      returnType: 'unknown',
-    });
+    // Object literal — expand fields
+    if (type.flags & ts.TypeFlags.Object) {
+      const props = type.getProperties();
+      if (props.length > 0 && !sym?.name?.match(/^[A-Z]/) /* skip named classes */) {
+        const fields = props.map(p => {
+          let pt = checker.getTypeOfSymbolAtLocation(p, p.valueDeclaration || p.declarations![0]);
+          const isOpt = (p.flags & ts.SymbolFlags.Optional) !== 0;
+          // For optional fields, TS adds `undefined` to the union — strip it
+          if (isOpt && pt.isUnion()) {
+            const nonUndef = pt.types.filter(t => !(t.flags & ts.TypeFlags.Undefined));
+            if (nonUndef.length === 1) pt = nonUndef[0];
+          }
+          return `  ${p.name}${isOpt ? '?' : ''}: ${resolveType(pt, depth + 1)}`;
+        });
+        return `{\n${fields.join(';\n')};\n}`;
+      }
+    }
+
+    return checker.typeToString(type, undefined, ts.TypeFormatFlags.NoTruncation);
   }
-}
 
-// Generate the Elysia type chain
-function pathToElysiaChain(routes: RouteInfo[]): string {
-  // Group by first path segment for nested types
-  const lines: string[] = [];
+  function extractMethodTypes(className: string, methodName: string) {
+    const srcPath = ctrlSourceMap.get(className);
+    if (!srcPath) return { ret: 'unknown', body: null as string | null, query: null as string | null };
 
-  for (const route of routes) {
-    const cleanPath = route.path.replace(/^\//, '');
-    const segments = cleanPath ? cleanPath.split('/') : [''];
-    
-    // Build the Elysia .get() / .post() chain
-    const bodyType = route.hasBody ? '{ body: Record<string, any> }' : '{}';
-    const responseType = '{ 200: unknown }';
-    
-    lines.push(`  .${route.method}("${route.path}", () => ({} as any), ${route.hasBody ? `{ body: t.Object({}) }` : '{}'})`);
+    const sf = program.getSourceFile(srcPath);
+    if (!sf) return { ret: 'unknown', body: null as string | null, query: null as string | null };
+
+    let ret = 'unknown', body: string | null = null, query: string | null = null;
+
+    function visit(node: ts.Node) {
+      if (ts.isClassDeclaration(node) && node.name?.text === className) {
+        for (const member of node.members) {
+          if (!ts.isMethodDeclaration(member) || !member.name || !ts.isIdentifier(member.name) || member.name.text !== methodName) continue;
+
+          // Return type
+          const sig = checker.getSignatureFromDeclaration(member);
+          if (sig) ret = resolveType(checker.getReturnTypeOfSignature(sig));
+
+          // Params
+          for (const param of member.parameters) {
+            const decs = ts.getDecorators(param) || [];
+            for (const dec of decs) {
+              if (!ts.isCallExpression(dec.expression) || !ts.isIdentifier(dec.expression.expression)) continue;
+              const decName = dec.expression.expression.text;
+
+              if (decName === 'Body' && param.type) {
+                const paramType = checker.getTypeAtLocation(param);
+                body = resolveType(paramType);
+              }
+              if (decName === 'Query') {
+                if (param.type) {
+                  const paramType = checker.getTypeAtLocation(param);
+                  query = resolveType(paramType);
+                } else {
+                  query = 'Record<string, string>';
+                }
+              }
+            }
+          }
+        }
+      }
+      ts.forEachChild(node, visit);
+    }
+    visit(sf);
+    return { ret, body, query };
   }
 
-  return lines.join('\n');
-}
+  // Step 4: Enrich routes with types
+  const enriched = routes.map(r => {
+    const { ret, body, query } = extractMethodTypes(r.ctrl, r.methodName);
+    return { ...r, retType: ret, bodyType: body, queryType: query };
+  });
 
-// Generate output file content
-const output = `/**
- * AUTO-GENERATED by Eden Type Generator
- * Do NOT edit this file manually.
- * 
- * Regenerate with:
- *   bun run scripts/eden-generate.ts ${modulePath}${outputPath ? ` --output ${outputPath}` : ''}
- * 
- * Usage with Eden Treaty:
- *   import { treaty } from '@elysiajs/eden';
- *   import type { App } from '${outputPath ? outputPath.replace(/\.d\.ts$/, '').replace(/\.ts$/, '') : './eden'}';
- *   const api = treaty<App>('http://localhost:3000');
+  // Step 5: Generate named interfaces + Elysia chain
+  const interfaces = new Map<string, string>();
+  let ifaceCounter = 0;
+
+  function internType(typeStr: string, hint: string): string {
+    // Only create named interfaces for multiline object types
+    if (!typeStr.includes('\n')) return typeStr;
+
+    // Check if we already have this interface
+    for (const [name, def] of interfaces) {
+      if (def === typeStr) return name;
+    }
+
+    const name = hint.charAt(0).toUpperCase() + hint.slice(1);
+    const uniqueName = interfaces.has(name) ? `${name}${++ifaceCounter}` : name;
+    interfaces.set(uniqueName, typeStr);
+    return uniqueName;
+  }
+
+  // Generate TypeBox from inferred body type string
+  function typeToTypebox(typeStr: string): string {
+    const s = typeStr.trim();
+    if (s === 'string') return 't.String()';
+    if (s === 'number') return 't.Number()';
+    if (s === 'boolean') return 't.Boolean()';
+    if (s === 'any') return 't.Any()';
+    if (s === 'null') return 't.Null()';
+
+    // Handle union: undefined | string → t.Optional(t.String())
+    if (s.includes(' | ')) {
+      const parts = s.split(' | ').map(p => p.trim()).filter(p => p !== 'undefined');
+      if (parts.length === 0) return 't.Any()';
+      if (parts.length === 1) return `t.Optional(${typeToTypebox(parts[0])})`;
+      return `t.Union([${parts.map(p => typeToTypebox(p)).join(', ')}])`;
+    }
+
+    // Array
+    if (s.endsWith('[]')) return `t.Array(${typeToTypebox(s.slice(0, -2).trim())})`;
+
+    // Object with fields
+    if (s.startsWith('{')) {
+      const fields = s.replace(/^\{|\}$/g, '').split(';').filter(f => f.trim());
+      const tbFields = fields.map(f => {
+        const m = f.trim().match(/^(\w+)(\?)?\s*:\s*(.+)$/);
+        if (!m) return '';
+        const [, name, opt, ftype] = m;
+        const tb = typeToTypebox(ftype.trim());
+        return opt ? `${name}: t.Optional(${tb})` : `${name}: ${tb}`;
+      }).filter(Boolean);
+      return `{ ${tbFields.join(', ')} }`;
+    }
+
+    return 't.Any()';
+  }
+
+  // Build the chain
+  const chainLines: string[] = [];
+  for (const r of enriched) {
+    const isArrayRet = r.retType.trimEnd().endsWith('[]');
+    const elementType = isArrayRet ? r.retType.trimEnd().slice(0, -2).trimEnd() : r.retType;
+
+    // Intern the element type (creates named interface if it's a multiline object)
+    const typeName = internType(elementType, `${r.ctrl.replace('Controller', '')}Item`);
+    const castType = isArrayRet ? `${typeName}[]` : typeName;
+
+    // Build route options
+    const opts: string[] = [];
+    if (r.bodyType) opts.push(`body: t.Object(${typeToTypebox(r.bodyType)})`);
+    if (r.paramKeys.length > 0) {
+      const paramFields = r.paramKeys.map(k => `${k}: t.String()`).join(', ');
+      opts.push(`params: t.Object({ ${paramFields} })`);
+    }
+
+    const optsStr = opts.length > 0 ? `, { ${opts.join(', ')} }` : '';
+
+    chainLines.push(`  .${r.method}("${r.path}", () => ({} as ${castType})${optsStr})`);
+  }
+
+  // Step 6: Build output
+  const ifaceBlocks = [...interfaces.entries()].map(([name, def]) =>
+    `interface ${name} ${def}`
+  ).join('\n\n');
+
+  const finalPath = outputPath || modulePath!.replace(/\.ts$/, '.eden.ts');
+
+  const output = `/**
+ * AUTO-GENERATED by Eden Type Generator v3
+ * Do NOT edit manually — regenerate with:
+ *   bun run eden:generate ${modulePath}${outputPath ? ` --output ${outputPath}` : ''}
  */
 import { Elysia, t } from 'elysia';
 
+// ─── Inferred Types ──────────────────────────────────────────────
+${ifaceBlocks || '// (all types are inline)'}
+
+// ─── Route Definitions ──────────────────────────────────────────
+
 const _app = new Elysia()
-${pathToElysiaChain(routes)};
+${chainLines.join('\n')};
 
 export type App = typeof _app;
 `;
 
-// Write output
-const finalPath = outputPath || modulePath.replace(/\.ts$/, '.eden.d.ts');
-await Bun.write(finalPath, output);
+  await Bun.write(finalPath, output);
 
-console.log(`✅ Eden types generated successfully!`);
-console.log(`   📄 Output: ${finalPath}`);
-console.log(`   🔗 Routes found: ${routes.length}`);
-routes.forEach(r => {
-  console.log(`      ${r.method.toUpperCase().padEnd(6)} ${r.path}`);
-});
-console.log(`\n💡 Usage:`);
-console.log(`   import { treaty } from '@elysiajs/eden';`);
-console.log(`   import type { App } from '${finalPath.replace(/\.d\.ts$/, '').replace(/\.ts$/, '')}';`);
-console.log(`   const api = treaty<App>('http://localhost:3000');`);
+  const elapsed = Date.now() - startTime;
+  console.log(`\n✅ Generated ${finalPath} (${enriched.length} routes, ${elapsed}ms)\n`);
+  for (const r of enriched) {
+    const body = r.bodyType ? `  body: ${r.bodyType.replace(/\n/g, ' ')}` : '';
+    const retShort = r.retType.replace(/\n/g, ' ').replace(/\s+/g, ' ');
+    console.log(`   ${r.method.toUpperCase().padEnd(6)} ${r.path.padEnd(25)} → ${retShort}${body ? `  (${body})` : ''}`);
+  }
+  console.log('');
+}
+
+// ─── Execute ─────────────────────────────────────────────────────
+
+await generate();
+
+if (watchMode) {
+  const moduleDir = path.dirname(path.resolve(process.cwd(), modulePath!));
+  console.log(`👀 Watching ${moduleDir} for changes...\n`);
+
+  let debounce: Timer | null = null;
+  fs.watch(moduleDir, { recursive: true }, (event, filename) => {
+    if (!filename?.endsWith('.ts') || filename.includes('eden')) return;
+    if (debounce) clearTimeout(debounce);
+    debounce = setTimeout(async () => {
+      console.log(`\n🔄 ${filename} changed, regenerating...`);
+      try { await generate(); } catch (e) { console.error('❌', e); }
+    }, 300);
+  });
+
+  // Keep alive
+  await new Promise(() => {});
+}

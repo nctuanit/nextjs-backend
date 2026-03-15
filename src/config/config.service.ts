@@ -25,18 +25,19 @@ export class ConfigService<Config = Record<string, string>> {
     if (options?.schema) {
       try {
         const copy = { ...rawConfig };
-        
+
         // Convert strings to correct primitives (e.g "3000" -> 3000, "true" -> true)
-        Value.Convert(options.schema, copy);
-        
+        // Value.Convert returns a new object with coerced types — capture the result
+        const converted = Value.Convert(options.schema, copy) as Record<string, unknown>;
+
         // Apply default values defined in the schema
-        const defaulted = Value.Default(options.schema, copy) as any;
-        
+        const defaulted = Value.Default(options.schema, converted) as Record<string, unknown>;
+
         // Validate and decode
         const decoded = Value.Decode(options.schema, defaulted);
-        
+
         this.config = (decoded || defaulted) as Config;
-      } catch (error: any) {
+      } catch (error: unknown) {
         this.logger.error('Environment validation failed!');
         
         // Print detailed TypeBox errors

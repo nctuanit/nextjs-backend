@@ -58,8 +58,8 @@ export class JwtService {
         audience: this.options.signOptions?.audience,
       });
       return payload as T;
-    } catch (e: any) {
-      throw new Error(`Invalid or expired token: ${e.message}`);
+    } catch (e: unknown) {
+      throw new Error(`Invalid or expired token: ${e instanceof Error ? e.message : String(e)}`);
     }
   }
 }

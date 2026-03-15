@@ -40,6 +40,24 @@ export abstract class SessionStore {
 export class InMemorySessionStore implements SessionStore {
   // Store shape: sessionId => { data, expiresAt }
   private store = new Map<string, { data: SessionData; expiresAt: number }>();
+  private cleanupTimer: ReturnType<typeof setInterval>;
+
+  constructor() {
+    // Periodically purge expired sessions to prevent memory leaks
+    this.cleanupTimer = setInterval(() => this.purgeExpired(), 60_000);
+    // Allow process to exit without waiting for this timer
+    if (this.cleanupTimer.unref) this.cleanupTimer.unref();
+  }
+
+  /** Remove all expired entries from the store */
+  private purgeExpired(): void {
+    const now = Date.now();
+    for (const [id, entry] of this.store) {
+      if (entry.expiresAt > 0 && entry.expiresAt < now) {
+        this.store.delete(id);
+      }
+    }
+  }
 
   async get(sessionId: string): Promise<SessionData | null> {
     const entry = this.store.get(sessionId);

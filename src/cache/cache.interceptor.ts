@@ -8,7 +8,7 @@ import { type Context } from 'elysia';
 
 @Injectable()
 export class CacheInterceptor implements NestInterceptor {
-  async intercept(context: Context, next: () => Promise<any>): Promise<any> {
+  async intercept(context: Context, next: () => Promise<unknown>): Promise<unknown> {
     // Determine the executing method
     // In our architecture, Elysia routes aren't directly aware of the controller methodName inside the interceptor natively
     // unless we pass it down. But we can derive cache keys from the Request URL natively.

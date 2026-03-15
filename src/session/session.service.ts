@@ -27,14 +27,18 @@ export class SessionService {
    */
   async getSession(sessionId: string): Promise<SessionData | null> {
     if (!sessionId) return null;
-    
-    // Attempt touch/refresh
+
+    // Get the session first — check expiry before touching
+    const data = await this.store.get(sessionId);
+    if (!data) return null;
+
+    // Refresh TTL only for valid, non-expired sessions
     const ttl = this.options.ttl ?? 86400;
     if (this.store.touch) {
       await this.store.touch(sessionId, ttl);
     }
-    
-    return this.store.get(sessionId);
+
+    return data;
   }
 
   /**

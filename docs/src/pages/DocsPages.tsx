@@ -18,6 +18,24 @@ import cacheModuleRaw from "../content/cache-module.mdx" with { type: "text" };
 import globalMiddlewareRaw from "../content/global-middleware.mdx" with { type: "text" };
 import websocketGatewayRaw from "../content/websocket-gateway.mdx" with { type: "text" };
 import devModeRaw from "../content/dev-mode.mdx" with { type: "text" };
+import sessionModuleRaw from "../content/session-module.mdx" with { type: "text" };
+import pipelinesRaw from "../content/pipelines.mdx" with { type: "text" };
+
+// New pages
+import cliRaw from "../content/cli.mdx" with { type: "text" };
+import testingRaw from "../content/testing.mdx" with { type: "text" };
+import scheduleEventsRaw from "../content/schedule-events.mdx" with { type: "text" };
+import healthModuleRaw from "../content/health-module.mdx" with { type: "text" };
+import throttleMiddlewareRaw from "../content/throttle-middleware.mdx" with { type: "text" };
+import edenTreatyRaw from "../content/eden-treaty.mdx" with { type: "text" };
+import nextauthRaw from "../content/nextauth.mdx" with { type: "text" };
+import sseRaw from "../content/sse.mdx" with { type: "text" };
+
+// AI Module pages
+import aiModuleRaw from "../content/ai-module.mdx" with { type: "text" };
+import aiMemoryWorkflowRaw from "../content/ai-memory-workflow.mdx" with { type: "text" };
+import aiPluginsRaw from "../content/ai-plugins.mdx" with { type: "text" };
+import aiA2aRaw from "../content/ai-a2a.mdx" with { type: "text" };
 
 export function IntroPage() { return <MarkdownRenderer content={introRaw as unknown as string} />; }
 export function FirstStepsPage() { return <MarkdownRenderer content={firstStepsRaw as unknown as string} />; }
@@ -37,3 +55,21 @@ export function CacheModulePage() { return <MarkdownRenderer content={cacheModul
 export function GlobalMiddlewarePage() { return <MarkdownRenderer content={globalMiddlewareRaw as unknown as string} />; }
 export function WebSocketGatewayPage() { return <MarkdownRenderer content={websocketGatewayRaw as unknown as string} />; }
 export function DevModePage() { return <MarkdownRenderer content={devModeRaw as unknown as string} />; }
+export function SessionModulePage() { return <MarkdownRenderer content={sessionModuleRaw as unknown as string} />; }
+export function PipelinesPage() { return <MarkdownRenderer content={pipelinesRaw as unknown as string} />; }
+
+// New pages
+export function CliPage() { return <MarkdownRenderer content={cliRaw as unknown as string} />; }
+export function TestingPage() { return <MarkdownRenderer content={testingRaw as unknown as string} />; }
+export function ScheduleEventsPage() { return <MarkdownRenderer content={scheduleEventsRaw as unknown as string} />; }
+export function HealthModulePage() { return <MarkdownRenderer content={healthModuleRaw as unknown as string} />; }
+export function ThrottleMiddlewarePage() { return <MarkdownRenderer content={throttleMiddlewareRaw as unknown as string} />; }
+export function EdenTreatyPage() { return <MarkdownRenderer content={edenTreatyRaw as unknown as string} />; }
+export function NextAuthPage() { return <MarkdownRenderer content={nextauthRaw as unknown as string} />; }
+export function SsePage() { return <MarkdownRenderer content={sseRaw as unknown as string} />; }
+
+// AI Module pages
+export function AiModulePage() { return <MarkdownRenderer content={aiModuleRaw as unknown as string} />; }
+export function AiMemoryWorkflowPage() { return <MarkdownRenderer content={aiMemoryWorkflowRaw as unknown as string} />; }
+export function AiPluginsPage() { return <MarkdownRenderer content={aiPluginsRaw as unknown as string} />; }
+export function AiA2aPage() { return <MarkdownRenderer content={aiA2aRaw as unknown as string} />; }

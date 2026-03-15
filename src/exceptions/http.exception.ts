@@ -3,7 +3,7 @@ export class HttpException extends Error {
     public readonly response: string | Record<string, unknown> | unknown[],
     public readonly status: number,
   ) {
-    super();
+    super(typeof response === 'string' ? response : JSON.stringify(response));
     this.name = 'HttpException';
   }
 
@@ -13,17 +13,5 @@ export class HttpException extends Error {
 
   getStatus(): number {
     return this.status;
-  }
-}
-
-export class ForbiddenException extends HttpException {
-  constructor(message = 'Forbidden') {
-    super(message, 403);
-  }
-}
-
-export class BadRequestException extends HttpException {
-  constructor(message: string | string[] = 'Bad Request') {
-    super(message, 400);
   }
 }

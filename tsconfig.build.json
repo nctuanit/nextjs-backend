@@ -6,6 +6,9 @@
     "docs",
     "samples",
     "testing",
+    "cli",
+    "scripts",
+    "test.ts",
     "**/*.test.ts",
     "**/*.spec.ts",
     "**/__tests__/*"

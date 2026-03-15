@@ -2,29 +2,34 @@
   <img src="docs/src/assets/logo.png" width="300" alt="Next.js Backend Logo" />
 </p>
 
-# Next.js Backend (Elysia Nest-like Library)
+<p align="center">
+  <a href="https://www.npmjs.com/package/next-js-backend"><img src="https://img.shields.io/npm/v/next-js-backend.svg?style=flat-square" alt="npm version" /></a>
+  <a href="https://www.npmjs.com/package/next-js-backend"><img src="https://img.shields.io/npm/dm/next-js-backend.svg?style=flat-square" alt="npm downloads" /></a>
+  <a href="https://github.com/nctuanit/nextjs-backend/blob/main/LICENSE"><img src="https://img.shields.io/npm/l/next-js-backend.svg?style=flat-square" alt="license" /></a>
+  <img src="https://img.shields.io/badge/runtime-Bun-f9a8d4?style=flat-square" alt="runtime" />
+  <img src="https://img.shields.io/badge/tests-86%20passed-brightgreen?style=flat-square" alt="tests" />
+</p>
 
-Một thư viện backend mạnh mẽ, tốc độ cao dành cho Node/Bun, được xây dựng trên nền tảng **ElysiaJS**. Nó mang kiến trúc **NestJS** quen thuộc và có tính cấu trúc cao (Decorators, Dependency Injection, Modules, Guards, Interceptors) đến với hệ sinh thái Elysia siêu tốc.
+# Next.js Backend
 
-Được thiết kế tỉ mỉ để sẵn sàng cho **Serverless & Edge**, dễ dàng tích hợp trực tiếp vào Next.js App Router API endpoints thông qua `next-js-backend`.
+A high-performance **NestJS-like** backend framework for **Bun**, powered by **ElysiaJS**. Write structured, decorator-based APIs with full DI, Guards, Interceptors, Pipes — and deploy to Next.js Edge, Vercel, or standalone.
 
----
+```bash
+bun add next-js-backend
+```
 
-## 🚀 Tính Năng (Features)
+## ✨ Feature Overview
 
-- **Kiến trúc giống NestJS**: Cấu trúc ứng dụng của bạn với `@Controller`, `@Injectable`, và `@Module`.
-- **Lõi ElysiaJS**: Hoạt động dựa trên ElysiaJS và Bun, mang lại hiệu suất tối đa cùng với sự tích hợp TypeBox.
-- **Dependency Injection**: Vùng chứa IoC siêu mạnh với đầy đủ tính năng, hỗ trợ `useClass`, `useValue`, `useFactory` và injection qua constructor tiêu chuẩn.
-- **Quy trình xử lý (Pipeline)**:
-  - **Guards** (`@UseGuards`): Xác thực và phân quyền.
-  - **Interceptors** (`@UseInterceptors`): Ghi log request/response, thay đổi và biến đổi dữ liệu.
-  - **Pipes** (`@UsePipes`): Xác thực định dạng dữ liệu (hỗ trợ tích hợp sẵn `ValidationPipe` với `class-validator`).
-  - **Filters** (`@UseFilters`, `@Catch`): Quản lý luồng ngoại lệ (Custom Exception Handlers) toàn cục & theo cấp độ.
-- **Quản lý Phiên (Session)**: Module `SessionModule` tích hợp sẵn dùng Cookie với hệ thống lưu trữ có thể cắm ghép (Redis/DB/Memory).
-- **Core Modules**: Tích hợp sẵn `ConfigModule` (Xác thực tham số môi trường Env), `JwtModule` (Xác thực token) và `LoggerService`.
-- **Next.js API Routes**: Tương thích tức thì theo dạng drop-in với `export const { GET, POST } = bootstrap()`.
-- **Tải lên File (File Uploads)**: Hỗ trợ tự nhiên cho `@File()` / `@Files()` thông qua `multipart/form-data`.
-- **OpenAPI / Swagger**: Hỗ trợ xuất sắc nhất thông qua các plugin gốc của Elysia.
+| Category | Features |
+|----------|----------|
+| **Architecture** | `@Controller`, `@Injectable`, `@Module`, Dependency Injection |
+| **Routing** | `@Get`, `@Post`, `@Put`, `@Delete`, `@Patch`, `@Param`, `@Body`, `@Query`, `@Headers` |
+| **Pipeline** | Guards, Interceptors, Pipes, Exception Filters, Global Middleware, `@UseMiddleware` |
+| **Auth** | JWT Module, NextAuth (Auth.js v5), Session Module, `@Throttle` rate limiting |
+| **Data** | Cache Module, Config Module (env validation), `@Cron` scheduling |
+| **Realtime** | WebSocket Gateway, SSE Streaming, `@OnEvent` pub/sub |
+| **Tooling** | CLI (`npx next-js-backend new`), Testing Utilities, Eden Treaty codegen |
+| **DX** | DevMode Profiler, Health Check Module, OpenAPI/Swagger, File Upload |
 
 ---
 
@@ -475,19 +480,111 @@ Và giờ đây, bất kì lúc nào bạn tiến hành dùng decorater `@Sessio
 
 ---
 
-## 🧪 Testing (Chạy Thử Nghiệm)
+### 8. CLI Tool
 
-Chúng tôi sử dụng môi trường test trực tiếp thông qua runner của Bun (`bun:test`). Tất cả files cấu hình bài test nghiệm thu thư mục nguồn (source) đều chứa bên trong thư mục `__tests__` đi liền cạnh.
+Scaffold projects and generate code instantly:
 
 ```bash
-bun test
+# Tạo project mới
+npx next-js-backend new my-api
+
+# Sinh code
+npx next-js-backend g resource users    # module + controller + service
+npx next-js-backend g controller posts
+npx next-js-backend g guard auth
+```
+
+### 9. Testing Utilities
+
+```typescript
+import { Test } from 'next-js-backend';
+
+const module = await Test.createTestingModule({
+  controllers: [UserController],
+  providers: [UserService],
+})
+  .overrideProvider(UserService).useValue(mockService)
+  .compile();
+
+const app = await module.createApp();
+const res = await app.handle(new Request('http://localhost/users'));
+```
+
+### 10. Eden Treaty — Type-Safe API Client
+
+Auto-generate type-safe client from controllers:
+
+```bash
+bun run eden:generate src/app.module.ts --output src/eden.ts --watch
+```
+
+```typescript
+import { treaty } from '@elysiajs/eden';
+import type { App } from './eden';
+
+const api = treaty<App>('http://localhost:3000');
+const { data } = await api.users.get();     // ← full autocomplete
+const { data: user } = await api.users.post({ name: 'Alice' }); // ← body enforced
+```
+
+### 11. Task Scheduling & Events
+
+```typescript
+@Injectable()
+export class TasksService {
+  @Cron('0 0 * * *')
+  async dailyCleanup() { ... }
+}
+
+@Injectable()
+export class NotifyService {
+  @OnEvent('user.created')
+  async sendWelcome(data: { email: string }) { ... }
+}
+```
+
+### 12. Health Check
+
+```typescript
+@Module({ imports: [HealthModule] })
+// GET /health → { status: 'ok', uptime, memory }
+```
+
+### 13. @Throttle & @UseMiddleware
+
+```typescript
+@Throttle({ limit: 5, ttl: 60 })  // 5 requests / 60s
+@Get('/expensive')
+compute() { ... }
+
+@UseMiddleware(LoggingMiddleware)
+@Get('/data')
+getData() { ... }
 ```
 
 ---
 
-## 💖 Lời Cảm Ơn (Acknowledgements)
+## 📊 So Sánh (Comparison)
 
-Đặc biệt gửi lời cảm ơn tới **Antigravity** (Google DeepMind) đã đồng hành, hỗ trợ kỹ thuật và giúp tôi hiện thực hóa toàn bộ ý tưởng của Thư viện này từ những dòng code đầu tiên. Cùng với sức mạnh của tinh thần pair-programming, **Next.js Backend** đã ra đời!
+| Feature | next-js-backend | NestJS | Hono |
+|---------|:-:|:-:|:-:|
+| Bun native | ✅ | ❌ | ✅ |
+| Decorators + DI | ✅ | ✅ | ❌ |
+| Next.js Edge | ✅ | ❌ | ⚠️ |
+| Type-safe client | ✅ Eden | ❌ | ❌ |
+| Guards / Interceptors | ✅ | ✅ | ❌ |
+| WebSocket | ✅ | ✅ | ❌ |
+| CLI scaffolding | ✅ | ✅ | ❌ |
+| Bundle size | ~50KB | ~2MB | ~14KB |
+
+---
+
+## 🧪 Testing
+
+```bash
+bun test           # 86 tests, 228 assertions
+bun run typecheck  # tsc --noEmit
+```
 
 ---
 

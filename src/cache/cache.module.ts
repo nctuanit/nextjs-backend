@@ -1,6 +1,6 @@
 import { type DynamicModule } from '../interfaces';
 import { MemoryCacheStore, type CacheStore } from './cache.store';
-import { type Type } from '../di/provider';
+import { type Type, type ClassProvider, type ValueProvider } from '../di/provider';
 import { CacheInterceptor } from './cache.interceptor';
 
 export const CACHE_MANAGER = 'CACHE_MANAGER';
@@ -16,7 +16,7 @@ export class CacheModule {
   static register(options?: CacheModuleOptions): DynamicModule {
     const defaultStore = new MemoryCacheStore();
     
-    let storeProvider: any = {
+    let storeProvider: ClassProvider | ValueProvider = {
       provide: CACHE_MANAGER,
       useValue: defaultStore,
     };
