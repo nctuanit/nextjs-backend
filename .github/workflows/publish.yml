@@ -1,14 +1,27 @@
 name: Publish to npm
 
 on:
+  # Trigger khi push tag dạng v* (ví dụ: v2.1.0)
+  push:
+    tags:
+      - 'v*'
+  # Trigger khi tạo GitHub Release
   release:
     types: [created]
+  # Cho phép chạy thủ công từ GitHub Actions UI
+  workflow_dispatch:
+    inputs:
+      dry_run:
+        description: 'Dry run (không publish thật)'
+        type: boolean
+        default: false
 
 jobs:
   build-and-publish:
     runs-on: ubuntu-latest
     permissions:
       contents: read
+      id-token: write  # Required for npm provenance
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
@@ -30,7 +43,17 @@ jobs:
       - name: Build
         run: bun run build
 
+      - name: Verify package version
+        run: |
+          VERSION=$(node -p "require('./package.json').version")
+          echo "Publishing version: $VERSION"
+
       - name: Publish to npm
-        run: npm publish --access public
+        if: ${{ github.event.inputs.dry_run != 'true' }}
+        run: npm publish --access public --provenance
         env:
           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+
+      - name: Dry run (skip publish)
+        if: ${{ github.event.inputs.dry_run == 'true' }}
+        run: echo "Dry run — skipping npm publish. Build succeeded."
