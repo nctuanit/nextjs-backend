@@ -5,6 +5,7 @@ set -e
 GREEN='\033[0;32m'
 CYAN='\033[0;36m'
 YELLOW='\033[1;33m'
+RED='\033[0;31m'
 RESET='\033[0m'
 
 echo -e "${CYAN}🚀 Chọn loại bản cập nhật (SemVer):${RESET}"
@@ -45,7 +46,6 @@ git commit -m "$COMMIT_MSG" || true
 
 if [ "$VERSION_TYPE" != "none" ]; then
   echo -e "\n${GREEN}3. Đang cập nhật phiên bản ($VERSION_TYPE)...${RESET}"
-  # npm version tự động update package.json, tạo tag và commit cho version
   npm version $VERSION_TYPE -m "chore(release): %s"
   
   echo -e "\n${GREEN}4. Đang Push Code và Tags lên GitHub...${RESET}"
@@ -53,6 +53,25 @@ if [ "$VERSION_TYPE" != "none" ]; then
 else
   echo -e "\n${GREEN}3. Đang Push Code lên GitHub...${RESET}"
   git push
+fi
+
+# ─── Publish to npm ───────────────────────────────────────────────
+if [ "$VERSION_TYPE" != "none" ]; then
+  echo -e "\n${YELLOW}📦 Publish lên npm? (y/N):${RESET} "
+  read PUBLISH_CHOICE
+
+  if [[ "$PUBLISH_CHOICE" == "y" || "$PUBLISH_CHOICE" == "Y" ]]; then
+    echo -e "\n${GREEN}5. Build project...${RESET}"
+    bun run build
+
+    echo -e "\n${GREEN}6. Publishing to npm...${RESET}"
+    npm publish --access public
+    
+    VERSION=$(node -p "require('./package.json').version")
+    echo -e "\n${CYAN}🎉 Published next-js-backend@${VERSION} to npm!${RESET}"
+  else
+    echo -e "\n${CYAN}⏭  Bỏ qua publish npm.${RESET}"
+  fi
 fi
 
 echo -e "\n${CYAN}🎉 Hoàn tất thành công!${RESET}"
