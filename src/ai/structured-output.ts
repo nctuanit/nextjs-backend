@@ -79,9 +79,9 @@ export async function generateStructured<T extends TSchema>(
     } catch (e) {
       lastError = new Error(`JSON parse failed: ${e instanceof Error ? e.message : String(e)}\nRaw: ${raw}`);
 
-      // Tell model to fix its output on next attempt
+      // Reset to original messages + a single correction turn (avoid unbounded growth)
       retryMessages = [
-        ...retryMessages,
+        ...augmentedMessages,
         { role: 'assistant', content: raw },
         {
           role: 'user',
@@ -97,8 +97,9 @@ export async function generateStructured<T extends TSchema>(
       const errorMessages = errors.map((e) => `[${e.path}] ${e.message}`);
       lastError = new StructuredOutputValidationError(raw, errorMessages);
 
+      // Reset to original messages + a single correction turn (avoid unbounded growth)
       retryMessages = [
-        ...retryMessages,
+        ...augmentedMessages,
         { role: 'assistant', content: raw },
         {
           role: 'user',

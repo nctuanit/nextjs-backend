@@ -34,7 +34,6 @@
   "include": [
     "src/**/*",
     "index.ts",
-    "test.ts",
     "globals.d.ts"
   ],
   "exclude": [

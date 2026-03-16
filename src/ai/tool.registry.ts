@@ -120,15 +120,13 @@ export class ToolRegistry {
           errors.map((e) => ({ path: e.path, message: e.message })),
         );
       }
-      // Clean/coerce/default the values after validation
+      // Clean/coerce/default the values after validation, then pass as a single object
       const cleaned = Value.Clean(tool.schema, Value.Clone(args)) as Record<string, unknown>;
-      const argValues = Object.values(cleaned);
-      return tool.handler(...argValues);
+      return tool.handler(cleaned);
     }
 
-    // No schema — pass args directly
-    const argValues = Object.values(args);
-    return tool.handler(...argValues);
+    // No schema — pass args object directly
+    return tool.handler(args);
   }
 
   /** Clear all tools */

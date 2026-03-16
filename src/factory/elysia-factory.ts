@@ -144,11 +144,16 @@ export class ElysiaFactory {
         }
       }
     } catch(e) { /* ignore if PluginsModule is not imported */ }
-    // Check if DevMode is active
+    // Check if DevMode is active — DevModeModule.register() may not be imported
     let devModeActive = false;
+    let devModeConfig: DevModeConfig = { enabled: false };
     try {
-      const devModeConfig = await globalContainer.resolve(DEV_MODE_CONFIG) as DevModeConfig;
-      if (devModeConfig && devModeConfig.enabled) {
+      devModeConfig = await globalContainer.resolve<DevModeConfig>(DEV_MODE_CONFIG);
+    } catch {
+      // DevModeModule not imported — stay disabled silently
+    }
+    try {
+      if (devModeConfig?.enabled) {
         devModeActive = true;
         this.logger.log('Dev Mode Profiler is ACTIVE. Performance may be impacted.');
         
@@ -720,6 +725,18 @@ export class ElysiaFactory {
             ? (context.body as Record<string, unknown>)[data as string] 
             : context.body;
           break;
+        case RouteParamtypes.CUSTOM: {
+          // factory and customData were stored in RouteParamMetadata at decoration time
+          const factory = (metadata as RouteParamMetadata).factory;
+          if (factory) {
+            const customData = (metadata as RouteParamMetadata).customData;
+            args[index] = await factory(customData, context);
+          } else {
+            args[index] = null;
+          }
+          break;
+        }
+
         default:
           args[index] = null;
       }
