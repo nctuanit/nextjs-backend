@@ -48,7 +48,7 @@ describe('E2E Global Middleware (@Middleware, NestMiddleware)', () => {
     const res = await req('/middleware/test');
     expect(res.status).toBe(200);
     
-    const body = await res.json() as any;
+    const body = await res.json() ;
     expect(body.success).toBe(true);
     expect(body.audited).toBe(true);
   });

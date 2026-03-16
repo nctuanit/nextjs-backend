@@ -36,7 +36,7 @@ export class JwtService {
       .setIssuedAt();
 
     if (combinedOptions.expiresIn) {
-      signer = signer.setExpirationTime(combinedOptions.expiresIn as any);
+      signer = signer.setExpirationTime(combinedOptions.expiresIn);
     }
     if (combinedOptions.issuer) {
       signer = signer.setIssuer(combinedOptions.issuer);

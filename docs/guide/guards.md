@@ -7,18 +7,18 @@ Guards determine whether a request should be handled by the route handler. They 
 Implement the `CanActivate` interface:
 
 ```typescript
-import { Injectable, type CanActivate } from 'next-js-backend';
-import type { Context } from 'elysia';
+import { Injectable, type CanActivate } from "next-js-backend";
+import type { Context } from "elysia";
 
 @Injectable()
 export class AuthGuard implements CanActivate {
   async canActivate(context: Context): Promise<boolean> {
-    const token = context.request.headers.get('authorization')?.split(' ')[1];
+    const token = context.request.headers.get("authorization")?.split(" ")[1];
     if (!token) return false;
 
     try {
       const payload = await verifyJwt(token);
-      (context as any).user = payload;
+      context.user = payload;
       return true;
     } catch {
       return false;
@@ -34,11 +34,11 @@ When `canActivate()` returns `false`, the framework throws a `403 Forbidden` res
 ### Method-level
 
 ```typescript
-import { UseGuards } from 'next-js-backend';
+import { UseGuards } from "next-js-backend";
 
-@Controller('/users')
+@Controller("/users")
 export class UserController {
-  @Get('/profile')
+  @Get("/profile")
   @UseGuards(AuthGuard)
   getProfile(@CurrentUser() user: User) {
     return user;
@@ -49,7 +49,7 @@ export class UserController {
 ### Controller-level
 
 ```typescript
-@Controller('/admin')
+@Controller("/admin")
 @UseGuards(AuthGuard, RolesGuard)
 export class AdminController {
   // All routes protected
@@ -68,16 +68,16 @@ const app = await ElysiaFactory.create(AppModule);
 ## Role-based Guard
 
 ```typescript
-import { Injectable, type CanActivate } from 'next-js-backend';
+import { Injectable, type CanActivate } from "next-js-backend";
 
 @Injectable()
 export class RolesGuard implements CanActivate {
   constructor(private readonly roles: string[]) {}
 
   async canActivate(context: Context): Promise<boolean> {
-    const user = (context as any).user;
+    const user = context.user;
     if (!user) return false;
-    return this.roles.some(role => user.roles?.includes(role));
+    return this.roles.some((role) => user.roles?.includes(role));
   }
 }
 ```

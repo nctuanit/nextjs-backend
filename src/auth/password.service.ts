@@ -32,7 +32,7 @@ export class PasswordService {
     return Bun.password.hash(password, {
       algorithm: alg,
       cost,
-    } as any);
+    });
   }
 
   /**

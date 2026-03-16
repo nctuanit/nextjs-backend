@@ -48,7 +48,7 @@ describe('CacheModule & CacheInterceptor', () => {
     app = await ElysiaFactory.create({
       module: class DummyModule {},
       controllers: [CacheController]
-    } as any);
+    } );
   });
 
   const req = (path: string, options?: RequestInit) =>
@@ -57,28 +57,28 @@ describe('CacheModule & CacheInterceptor', () => {
   it('should cache response with default URL-based key', async () => {
     // 1st request - should execute and cache
     const res1 = await req('/cache/default');
-    const body1 = await res1.json() as any;
+    const body1 = await res1.json() ;
     expect(body1.id).toBe(1);
 
     // 2nd request - should hit cache
     const res2 = await req('/cache/default');
-    const body2 = await res2.json() as any;
+    const body2 = await res2.json() ;
     expect(body2.id).toBe(1); // The execution count shouldn't have gone up
   });
 
   it('should use explicitly defined CacheKey metadata', async () => {
     // 1st request 
     const res1 = await req('/cache/custom-key');
-    const body1 = await res1.json() as any;
+    const body1 = await res1.json() ;
     expect(body1.id).toBe(2);
 
     // 2nd request
     const res2 = await req('/cache/custom-key');
-    const body2 = await res2.json() as any;
+    const body2 = await res2.json() ;
     expect(body2.id).toBe(2); // From cache
 
     // Wait and verify inside the actual cache manager that the specific custom key exists
-    const cacheManager = await globalContainer.resolve(CACHE_MANAGER) as any;
+    const cacheManager = await globalContainer.resolve(CACHE_MANAGER) ;
     const value = await cacheManager.get('my_custom_key');
     expect(value).toEqual({ data: 'Custom key cache value', id: 2 });
   });
@@ -86,12 +86,12 @@ describe('CacheModule & CacheInterceptor', () => {
   it('should expire cache based on explicitly defined CacheTTL metadata', async () => {
     // 1st request 
     const res1 = await req('/cache/custom-ttl');
-    const body1 = await res1.json() as any;
+    const body1 = await res1.json() ;
     expect(body1.id).toBe(3);
 
     // 2nd request - immediately after, should hit cache
     const res2 = await req('/cache/custom-ttl');
-    const body2 = await res2.json() as any;
+    const body2 = await res2.json() ;
     expect(body2.id).toBe(3);
 
     // Wait 150ms for the 100ms TTL to expire
@@ -99,7 +99,7 @@ describe('CacheModule & CacheInterceptor', () => {
 
     // 3rd request - should execute again because cache expired
     const res3 = await req('/cache/custom-ttl');
-    const body3 = await res3.json() as any;
+    const body3 = await res3.json() ;
     expect(body3.id).toBe(4);
   });
 });

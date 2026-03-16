@@ -19,9 +19,10 @@ export interface ModuleMetadata {
  */
 export function Module(metadata: ModuleMetadata): ClassDecorator {
   return (target: object | Function) => {
-    for (const property in metadata) {
-      if (metadata.hasOwnProperty(property)) {
-        Reflect.defineMetadata(property, (metadata as any)[property], target);
+    const meta = metadata as Record<string, unknown>;
+    for (const property in meta) {
+      if (Object.prototype.hasOwnProperty.call(meta, property)) {
+        Reflect.defineMetadata(property, meta[property], target);
       }
     }
   };

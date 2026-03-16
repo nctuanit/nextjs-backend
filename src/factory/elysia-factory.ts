@@ -1,4 +1,5 @@
 import { Elysia, t, type Context } from 'elysia';
+import { asExtended, type ExtendedContext } from '../types.augment';
 import { type TSchema } from '@sinclair/typebox';
 import { globalContainer } from '../di/container';
 import { 
@@ -46,8 +47,9 @@ const sseEncoder = new TextEncoder();
 
 /** Extract methods from a prototype, excluding constructor */
 function getMethodNames(prototype: object): string[] {
-  return Object.getOwnPropertyNames(prototype).filter(
-    (m) => m !== 'constructor' && typeof (prototype as any)[m] === 'function',
+  const proto = prototype as Record<string, Function>;
+  return Object.getOwnPropertyNames(proto).filter(
+    (m) => m !== 'constructor' && typeof proto[m] === 'function',
   );
 }
 
@@ -184,7 +186,8 @@ export class ElysiaFactory {
 
         app = app.onRequest(({ request }) => {
             const reqId = crypto.randomUUID();
-            (request as any).reqId = reqId;
+            // reqId is declared on Request via src/types.augment.ts
+            (request as Request & { reqId?: string }).reqId = reqId;
             // Safety guard: evict oldest entry if map grows too large (aborted connections leak)
             if (reqStartTimes.size >= MAX_INFLIGHT_REQUESTS) {
               const firstKey = reqStartTimes.keys().next().value;
@@ -196,7 +199,7 @@ export class ElysiaFactory {
         app = app.onAfterResponse(({ request, set, body }) => {
             // console.log('[DEV_MODE_HOOK] Fired for', request.method, request.url);
             try {
-                const reqId = (request as any).reqId;
+                const reqId = (request as Request & { reqId?: string }).reqId;
                 const start = reqId ? reqStartTimes.get(reqId) || performance.now() : performance.now();
                 if (reqId) reqStartTimes.delete(reqId);
                 const durationMs = performance.now() - start;
@@ -310,7 +313,7 @@ export class ElysiaFactory {
                 ElysiaFactory.logger.log(`Mapped {${versionedPath}, ${httpMethod}, v${ver}} route`, 'RouterExplorer');
                 // Versioned routes share same handler — registered separately below
                 // We store versioned path temporarily and continue the main loop
-                (methodFn as any).__versionedPaths = versions.map(v =>
+                (methodFn as Function & { __versionedPaths?: string[] }).__versionedPaths = versions.map(v =>
                   `/v${v}${fullPath === '/' ? '' : fullPath}`
                 );
               }
@@ -425,7 +428,7 @@ export class ElysiaFactory {
                for (const mw of allMiddleware) {
                  const mwInstance = await globalContainer.resolve(mw as Type<unknown>) as NestMiddleware;
                  if (typeof mwInstance.use === 'function') {
-                   await mwInstance.use(context.request, context as any, () => Promise.resolve());
+                   await mwInstance.use(context.request, context , () => Promise.resolve());
                  }
                }
 
@@ -501,8 +504,9 @@ export class ElysiaFactory {
                   const interceptorInstance = await globalContainer.resolve(interceptorClass as Type<unknown>) as NestInterceptor;
                   
                   // Inject Metadata so Interceptors can respond (like CacheInterceptor)
-                  if (cacheKeyMeta) (context as any).cacheKey = cacheKeyMeta;
-                  if (cacheTtlMeta) (context as any).cacheTtl = cacheTtlMeta;
+                  const extCtx = asExtended(context);
+                  if (cacheKeyMeta) extCtx.cacheKey = cacheKeyMeta;
+                  if (cacheTtlMeta) extCtx.cacheTtl = cacheTtlMeta;
 
                   const nextRunner = runner;
                   runner = async () => await interceptorInstance.intercept(context, nextRunner);
@@ -552,7 +556,7 @@ export class ElysiaFactory {
                }
 
               // Also register versioned routes with identical handler
-              const versionedPaths: string[] | undefined = (methodFn as any).__versionedPaths;
+              const versionedPaths: string[] | undefined = (methodFn as Function & { __versionedPaths?: string[] }).__versionedPaths;
               if (versionedPaths?.length && options?.versioning?.type === 'uri') {
                 // Handler was already registered above for fullPath — we need to also do versioned paths
                 // They're registered inline in the same block below

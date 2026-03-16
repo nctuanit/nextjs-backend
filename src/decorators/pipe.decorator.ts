@@ -12,5 +12,5 @@ export function UsePipes(...pipes: (PipeTransform | Function)[]): MethodDecorato
     }
     Reflect.defineMetadata(PIPES_METADATA, pipes, target);
     return target;
-  }) as any;
+  }) ;
 }

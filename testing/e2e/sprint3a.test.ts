@@ -20,7 +20,7 @@ describe('HealthModule', () => {
     const response = await app.handle(new Request('http://localhost/health'));
 
     expect(response.status).toBe(200);
-    const data = await response.json() as any;
+    const data = await response.json() ;
     expect(data.status).toBe('ok');
     expect(typeof data.uptime).toBe('number');
     expect(typeof data.memory.rss).toBe('number');

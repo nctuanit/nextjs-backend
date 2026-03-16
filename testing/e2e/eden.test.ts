@@ -69,7 +69,7 @@ describe('Eden Treaty Integration', () => {
       const response = await api.items.post({ name: 'Item C' });
 
       expect(response.status).toBe(200);
-      expect((response.data as any).name).toBe('Item C');
+      expect((response.data ).name).toBe('Item C');
     } finally {
       app.stop();
     }

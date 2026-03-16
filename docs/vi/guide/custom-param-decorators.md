@@ -5,12 +5,12 @@ Muốn tự tạo decorator lấy dữ liệu từ request và inject thẳng v�
 ## Tạo Decorator
 
 ```typescript
-import { createParamDecorator } from 'next-js-backend';
-import type { Context } from 'elysia';
+import { createParamDecorator } from "next-js-backend";
+import type { Context } from "elysia";
 
 export const CurrentUser = createParamDecorator(
   (data: string | undefined, ctx: Context) => {
-    const user = (ctx as any).user; // AuthGuard đã gắn user vào context
+    const user = ctx.user; // AuthGuard đã gắn user vào context
     return data ? user?.[data] : user;
   },
 );
@@ -19,17 +19,17 @@ export const CurrentUser = createParamDecorator(
 ## Dùng Trong Controller
 
 ```typescript
-@Controller('/users')
+@Controller("/users")
 export class UserController {
   // Lấy cả object user
-  @Get('/me')
+  @Get("/me")
   getMe(@CurrentUser() user: User) {
     return user;
   }
 
   // Lấy một field cụ thể — data = 'email'
-  @Get('/email')
-  getEmail(@CurrentUser('email') email: string) {
+  @Get("/email")
+  getEmail(@CurrentUser("email") email: string) {
     return { email };
   }
 }
@@ -42,9 +42,9 @@ export class UserController {
 ```typescript
 export const ClientIp = createParamDecorator(
   (_data: unknown, ctx: Context) =>
-    ctx.request.headers.get('x-forwarded-for') ??
-    ctx.request.headers.get('host') ??
-    'unknown'
+    ctx.request.headers.get("x-forwarded-for") ??
+    ctx.request.headers.get("host") ??
+    "unknown",
 );
 ```
 
@@ -53,9 +53,9 @@ export const ClientIp = createParamDecorator(
 ```typescript
 export const BearerToken = createParamDecorator(
   (_data: unknown, ctx: Context) => {
-    const auth = ctx.request.headers.get('authorization') ?? '';
-    return auth.startsWith('Bearer ') ? auth.slice(7) : null;
-  }
+    const auth = ctx.request.headers.get("authorization") ?? "";
+    return auth.startsWith("Bearer ") ? auth.slice(7) : null;
+  },
 );
 ```
 
@@ -64,10 +64,10 @@ export const BearerToken = createParamDecorator(
 ```typescript
 export const SessionUser = createParamDecorator(
   async (_data: unknown, ctx: Context) => {
-    const token = ctx.request.headers.get('authorization');
+    const token = ctx.request.headers.get("authorization");
     if (!token) return null;
     return await authService.validateToken(token);
-  }
+  },
 );
 ```
 

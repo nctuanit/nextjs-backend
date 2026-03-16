@@ -81,7 +81,7 @@ describe('E2E Exception Filters (@Catch, @UseFilters)', () => {
   it('should handle custom domain error with CustomDomainExceptionFilter', async () => {
     const res = await req('/filters/custom-domain-error');
     expect(res.status).toBe(418);
-    const body = await res.json() as any;
+    const body = await res.json();
     expect(body.success).toBe(false);
     expect(body.errorType).toBe('CustomDomainError');
     expect(body.message).toBe('This is a domain specific problem');
@@ -91,7 +91,7 @@ describe('E2E Exception Filters (@Catch, @UseFilters)', () => {
   it('should handle HttpException with GlobalHttpExceptionFilter (controller-level)', async () => {
     const res = await req('/filters/http-error');
     expect(res.status).toBe(403);
-    const body = await res.json() as any;
+    const body = await res.json() ;
     expect(body.success).toBe(false);
     expect(body.message).toBe('Not allowed action');
     expect(body).toHaveProperty('timestamp');
@@ -101,7 +101,7 @@ describe('E2E Exception Filters (@Catch, @UseFilters)', () => {
   it('should fallback to default error handler for unhandled errors', async () => {
     const res = await req('/filters/unhandled-error');
     expect(res.status).toBe(500);
-    const body = await res.json() as any;
+    const body = await res.json() ;
     expect(body.statusCode).toBe(500);
     expect(body.message).toBe('This should be handled by built-in Elysia/Nest error handler');
   });

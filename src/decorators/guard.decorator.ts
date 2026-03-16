@@ -15,5 +15,5 @@ export function UseGuards(...guards: (CanActivate | Function)[]): MethodDecorato
     // Class level
     Reflect.defineMetadata(GUARDS_METADATA, guards, target);
     return target;
-  }) as any;
+  });
 }

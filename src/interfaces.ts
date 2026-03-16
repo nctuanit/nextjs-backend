@@ -1,8 +1,9 @@
 import { type Context } from 'elysia';
 import { type Provider, type Type } from './di/provider';
+import { type ExtendedContext } from './types.augment';
 
 export interface CanActivate {
-  canActivate(context: Context): boolean | Promise<boolean>;
+  canActivate(context: ExtendedContext): boolean | Promise<boolean>;
 }
 
 export interface NestMiddleware<TRequest = unknown, TResponse = unknown> {
@@ -10,7 +11,7 @@ export interface NestMiddleware<TRequest = unknown, TResponse = unknown> {
 }
 
 export interface NestInterceptor<T = unknown, R = unknown> {
-  intercept(context: Context, next: () => Promise<R>): Promise<R>;
+  intercept(context: ExtendedContext, next: () => Promise<R>): Promise<R>;
 }
 
 export interface ExceptionFilter<T = unknown> {

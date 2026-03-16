@@ -20,7 +20,7 @@ describe('HealthModule > Integration', () => {
     const res = await app.handle(new Request('http://localhost/health'));
 
     expect(res.status).toBe(200);
-    const data = await res.json() as any;
+    const data = await res.json() ;
     expect(data.status).toBe('ok');
     expect(typeof data.uptime).toBe('number');
     expect(data.uptime).toBeGreaterThanOrEqual(0);
@@ -53,7 +53,7 @@ describe('HealthModule > Integration', () => {
     // Custom endpoint works alongside
     const apiRes = await app.handle(new Request('http://localhost/api/ping'));
     expect(apiRes.status).toBe(200);
-    const apiData = await apiRes.json() as any;
+    const apiData = await apiRes.json() ;
     expect(apiData.pong).toBe(true);
   });
 

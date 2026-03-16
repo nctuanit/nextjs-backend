@@ -4,11 +4,11 @@ import { CACHE_KEY_METADATA, CACHE_TTL_METADATA } from '../decorators/cache.deco
 import { CACHE_MANAGER } from './cache.module';
 import { globalContainer } from '../di/container';
 import { type CacheStore } from './cache.store';
-import { type Context } from 'elysia';
+import { type ExtendedContext } from '../types.augment';
 
 @Injectable()
 export class CacheInterceptor implements NestInterceptor {
-  async intercept(context: Context, next: () => Promise<unknown>): Promise<unknown> {
+  async intercept(context: ExtendedContext, next: () => Promise<unknown>): Promise<unknown> {
     // Determine the executing method
     // In our architecture, Elysia routes aren't directly aware of the controller methodName inside the interceptor natively
     // unless we pass it down. But we can derive cache keys from the Request URL natively.
@@ -23,7 +23,7 @@ export class CacheInterceptor implements NestInterceptor {
     // For now, we will use the URL-based key which handles 90% of basic caching use-cases.
     
     // Attempt to parse explicit Metadata from the router context if we augmented it later
-    const explicitKey = (context as any).cacheKey;
+    const explicitKey = context.cacheKey;
     const cacheKey = explicitKey || defaultKey;
     
     const cacheManager = await globalContainer.resolve(CACHE_MANAGER) as CacheStore;
@@ -39,7 +39,7 @@ export class CacheInterceptor implements NestInterceptor {
     
     // Save Cache
     // We try to grab the explicit TTL if provided in the context, else default to whatever the module configured
-    const explicitTtl = (context as any).cacheTtl;
+    const explicitTtl = context.cacheTtl;
     await cacheManager.set(cacheKey, response, explicitTtl);
 
     return response;

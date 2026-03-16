@@ -57,7 +57,7 @@ describe('JWT Authentication & AuthGuard', () => {
       new Request('http://localhost/auth/login', { method: 'GET' })
     );
     expect(loginResp.status).toBe(200);
-    const { token } = (await loginResp.json()) as any;
+    const { token } = (await loginResp.json()) ;
     expect(typeof token).toBe('string');
     expect(token.split('.').length).toBe(3); // JWT structure
 
@@ -83,7 +83,7 @@ describe('JWT Authentication & AuthGuard', () => {
     );
     
     expect(successResp.status).toBe(200);
-    const successJson = (await successResp.json()) as any;
+    const successJson = (await successResp.json()) ;
     expect(successJson.message).toBe('Protected data accessible');
   });
 

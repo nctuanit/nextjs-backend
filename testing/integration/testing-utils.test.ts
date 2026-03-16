@@ -92,7 +92,7 @@ describe('Testing > createApp', () => {
     const res = await app.handle(new Request('http://localhost/todos'));
 
     expect(res.status).toBe(200);
-    const data = await res.json() as any;
+    const data = await res.json() ;
     expect(data).toEqual([{ id: 1, title: 'Todo' }]);
   });
 
@@ -117,7 +117,7 @@ describe('Testing > createApp', () => {
 
     const app = await module.createApp();
     const res = await app.handle(new Request('http://localhost/data'));
-    const data = await res.json() as any;
+    const data = await res.json() ;
     expect(data.value).toBe('mocked');
   });
 });

@@ -1,22 +1,22 @@
 # Guards — Kiểm Tra Quyền Truy Cập
 
-Guard quyết định request có được đi tiếp hay bị chặn lại. Dùng cho **authorization** — không phải authentication (đó là việc của JWT/NextAuth), mà là kiểm tra người này *có được phép* làm điều này không.
+Guard quyết định request có được đi tiếp hay bị chặn lại. Dùng cho **authorization** — không phải authentication (đó là việc của JWT/NextAuth), mà là kiểm tra người này _có được phép_ làm điều này không.
 
 ## Tạo Guard
 
 ```typescript
-import { Injectable, type CanActivate } from 'next-js-backend';
-import type { Context } from 'elysia';
+import { Injectable, type CanActivate } from "next-js-backend";
+import type { Context } from "elysia";
 
 @Injectable()
 export class AuthGuard implements CanActivate {
   async canActivate(context: Context): Promise<boolean> {
-    const token = context.request.headers.get('authorization')?.split(' ')[1];
+    const token = context.request.headers.get("authorization")?.split(" ")[1];
     if (!token) return false;
 
     try {
       const payload = await verifyJwt(token);
-      (context as any).user = payload; // đính user vào context để handler dùng
+      context.user = payload; // đính user vào context để handler dùng
       return true;
     } catch {
       return false; // token sai hoặc hết hạn → trả 403
@@ -42,7 +42,7 @@ getProfile(@CurrentUser() user: User) {
 ### Cho cả controller
 
 ```typescript
-@Controller('/admin')
+@Controller("/admin")
 @UseGuards(AuthGuard, RolesGuard)
 export class AdminController {
   // tất cả routes trong này đều bị chặn nếu không pass guard
@@ -57,9 +57,9 @@ export class RolesGuard implements CanActivate {
   constructor(private readonly roles: string[]) {}
 
   async canActivate(context: Context): Promise<boolean> {
-    const user = (context as any).user;
+    const user = context.user;
     if (!user) return false;
-    return this.roles.some(role => user.roles?.includes(role));
+    return this.roles.some((role) => user.roles?.includes(role));
   }
 }
 ```

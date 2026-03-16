@@ -5,7 +5,7 @@ Integrate [Auth.js (NextAuth.js v5)](https://authjs.dev/) with your Next.js Back
 ## Setup
 
 ```typescript
-import { Module, NextAuthModule } from 'next-js-backend';
+import { Module, NextAuthModule } from "next-js-backend";
 
 @Module({
   imports: [
@@ -23,12 +23,12 @@ export class AppModule {}
 Protects routes by validating the Auth.js session cookie:
 
 ```typescript
-import { UseGuards } from 'next-js-backend';
-import { NextAuthGuard } from 'next-js-backend';
+import { UseGuards } from "next-js-backend";
+import { NextAuthGuard } from "next-js-backend";
 
-@Controller('/dashboard')
+@Controller("/dashboard")
 export class DashboardController {
-  @Get('/data')
+  @Get("/data")
   @UseGuards(NextAuthGuard)
   getData(@CurrentUser() session: Session) {
     return { user: session.user };
@@ -39,8 +39,9 @@ export class DashboardController {
 ## Session Data
 
 The `NextAuthGuard` injects:
-- `(context as any).user` — `session.user` object
-- `(context as any).session` — full session object
+
+- `context.user` — `session.user` object
+- `context.session` — full session object
 
 Use with `createParamDecorator`:
 

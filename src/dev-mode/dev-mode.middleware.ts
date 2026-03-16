@@ -12,7 +12,7 @@ import { DevModeService } from './dev-mode.service';
 export class DevModeLoggerMiddleware implements NestMiddleware {
     constructor(private devModeService: DevModeService) {}
 
-    async use(req: Request, res: unknown, next: () => void | Promise<void>) {
+    async use(req: Request, res: { status?: number }, next: () => void | Promise<void>) {
         const start = performance.now();
         const url = new URL(req.url);
 
@@ -35,14 +35,14 @@ export class DevModeLoggerMiddleware implements NestMiddleware {
           bodyPayload = await clonedReq.json().catch(() => clonedReq.text()).catch(() => undefined);
         }
 
-        let statusCode = (res as any)?.status || 200;
+        let statusCode = (res )?.status || 200;
         let errorMessage: string | undefined = undefined;
 
 
         // Proceed with request
         try {
             await next();
-            statusCode = (res as any)?.status || statusCode;
+            statusCode = (res )?.status || statusCode;
         } catch(e: unknown) {
             const err = e instanceof Error ? e : new Error(String(e));
             statusCode = (e as { status?: number })?.status || 500;

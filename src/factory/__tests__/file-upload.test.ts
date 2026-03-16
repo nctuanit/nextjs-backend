@@ -61,7 +61,7 @@ describe('File Upload Decorators', () => {
     });
 
     const res = await app.handle(req);
-    const json = await res.json() as any;
+    const json = await res.json() ;
     
     expect(res.status).toBe(200);
     expect(json.count).toBe(2);
@@ -101,7 +101,7 @@ describe('File Upload Decorators', () => {
     });
 
     const res = await app.handle(req);
-    const json = await res.json() as any;
+    const json = await res.json() ;
     
     // In Elysia multipart form data, appending just a string still comes through,
     // but without `.name` or `.size` (unless it's coerced). Our handler expects a File.

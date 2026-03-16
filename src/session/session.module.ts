@@ -28,7 +28,7 @@ export class SessionModule {
         // We ensure `storeProvider` binds to `SESSION_STORE` injection token
         // But SessionService constructor actually asks for `SessionStore` class generically.
         // We use a custom factory to wire the abstracted store token into the service.
-        storeProvider as any,
+        storeProvider ,
         {
           provide: SessionService,
           useFactory: (store: SessionStore, opts: SessionModuleOptions) => {

@@ -27,7 +27,7 @@ export class ValidationPipe implements PipeTransform {
         } catch(e) {}
     }
 
-    const object = plainToInstance(metadata.metatype as any, parseValue as object);
+    const object = plainToInstance(metadata.metatype as new (...args: unknown[]) => unknown, parseValue as object);
     const errors = await validate(object as object, this.options);
 
     if (errors.length > 0) {

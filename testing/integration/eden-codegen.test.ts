@@ -66,6 +66,6 @@ describe('Eden Codegen > Output Validation', () => {
     expect(content).not.toMatch(/interface\s+\w+\s*\{[^}]*\}\[\]/);
 
     // No `any` in return types (we should have real types)
-    expect(content).not.toContain('as any');
+    expect(content).not.toContain('');
   });
 });

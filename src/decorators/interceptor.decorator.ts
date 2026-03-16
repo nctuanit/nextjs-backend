@@ -15,5 +15,5 @@ export function UseInterceptors(...interceptors: (NestInterceptor | Function)[])
     // Class level
     Reflect.defineMetadata(INTERCEPTORS_METADATA, interceptors, target);
     return target;
-  }) as any;
+  }) ;
 }

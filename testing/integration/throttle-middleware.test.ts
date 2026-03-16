@@ -33,7 +33,7 @@ describe('@Throttle > HTTP Integration', () => {
     // First request should succeed
     const res1 = await app.handle(new Request('http://localhost/api/data'));
     expect(res1.status).toBe(200);
-    const data = await res1.json() as any;
+    const data = await res1.json() ;
     expect(data.ok).toBe(true);
   });
 

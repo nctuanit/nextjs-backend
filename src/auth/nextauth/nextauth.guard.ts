@@ -1,6 +1,6 @@
 import { Injectable } from '../../di/injectable.decorator';
 import { type CanActivate } from '../../interfaces';
-import { type Context } from 'elysia';
+import { type ExtendedContext } from '../../types.augment';
 import { NextAuthService } from './nextauth.service';
 import { UnauthorizedException } from '../../exceptions';
 
@@ -12,14 +12,14 @@ import { UnauthorizedException } from '../../exceptions';
  *   @UseGuards(NextAuthGuard)
  *   @Get('/profile')
  *   getProfile(@Req() req: Request) {
- *     return (req as any).user; // injected by the guard
+ *     return req.user; // injected by the guard
  *   }
  */
 @Injectable()
 export class NextAuthGuard implements CanActivate {
   constructor(private readonly nextAuthService: NextAuthService) {}
 
-  async canActivate(context: Context): Promise<boolean> {
+  async canActivate(context: ExtendedContext): Promise<boolean> {
     const request = context.request;
     const session = await this.nextAuthService.getSession(request);
     
@@ -28,9 +28,8 @@ export class NextAuthGuard implements CanActivate {
     }
 
     // Attach session and user to the context for downstream access
-    (context as any).user = session.user;
-    (context as any).session = session;
-    
+    context.user = session.user as Record<string, unknown>;
+    context.session = session as Record<string, unknown>;
     return true;
   }
 }

@@ -1,6 +1,6 @@
 import { Injectable } from '../di/injectable.decorator';
 import { type CanActivate } from '../interfaces';
-import { type Context } from 'elysia';
+import { type ExtendedContext } from '../types.augment';
 import { JwtService } from './jwt.service';
 import { UnauthorizedException } from '../exceptions';
 
@@ -8,7 +8,7 @@ import { UnauthorizedException } from '../exceptions';
 export class AuthGuard implements CanActivate {
   constructor(private readonly jwtService: JwtService) {}
 
-  async canActivate(context: Context): Promise<boolean> {
+  async canActivate(context: ExtendedContext): Promise<boolean> {
     const request = context.request;
     const authHeader = request.headers.get('authorization');
     
@@ -25,7 +25,7 @@ export class AuthGuard implements CanActivate {
     try {
       const payload = await this.jwtService.verifyAsync(token);
       // Append user payload directly into the context stream so controllers can access it
-      (context as any).user = payload;
+      context.user = payload;
       return true;
     } catch (error) {
       throw new UnauthorizedException('Token is invalid or expired');

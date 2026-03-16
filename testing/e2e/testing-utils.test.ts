@@ -83,7 +83,7 @@ describe('Test.createTestingModule()', () => {
     const response = await app.handle(new Request('http://localhost/cats'));
     expect(response.status).toBe(200);
 
-    const data = await response.json() as any;
+    const data = await response.json() ;
     expect(Array.isArray(data)).toBe(true);
     expect(data.length).toBeGreaterThanOrEqual(2);
   });
@@ -104,7 +104,7 @@ describe('Test.createTestingModule()', () => {
     const response = await app.handle(new Request('http://localhost/cats'));
     expect(response.status).toBe(200);
 
-    const data = await response.json() as any;
+    const data = await response.json() ;
     expect(data).toEqual([{ id: 1, name: 'OnlyMock' }]);
   });
 });

@@ -89,7 +89,7 @@ describe('E2E Dependency Injection (ElysiaFactory)', () => {
   it('should correctly build dependencies inside ElysiaFactory via globalContainer', async () => {
     const res = await req('/di');
     expect(res.status).toBe(200);
-    const data = await res.json() as any;
+    const data = await res.json() ;
     
     // RandomService should output a hash
     expect(data.hash).toBeDefined();
