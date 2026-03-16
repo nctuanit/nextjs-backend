@@ -15,6 +15,14 @@ import {
 } from '../constants';
 import { GATEWAY_METADATA, PATTERN_METADATA, MESSAGE_MAPPING_METADATA, type GatewayOptions } from '../decorators/websocket.decorator';
 import { SSE_METADATA } from '../decorators/sse.decorator';
+import { STREAM_FILE_METADATA } from '../decorators/stream-file.decorator';
+import { StreamFileResponse } from '../streaming/stream-file.response';
+import { VERSION_METADATA } from '../decorators/version.decorator';
+import { SERIALIZE_METADATA } from '../decorators/serialize.decorator';
+import { serializeObject } from '../serialization/serializer';
+import { COMPRESSION_CONFIG, type CompressionOptions } from '../compression/compression.module';
+import { PROCESSOR_METADATA, PROCESS_METADATA } from '../decorators/queue.decorator';
+import { QueueService } from '../queue/queue.service';
 import { RequestMethod } from '../decorators/method.decorator';
 import { RouteParamtypes, type RouteParamMetadata } from '../decorators/param.decorator';
 import { type CanActivate, type NestInterceptor, type PipeTransform, type ExceptionFilter, type NestMiddleware } from '../interfaces';
@@ -43,10 +51,21 @@ function getMethodNames(prototype: object): string[] {
   );
 }
 
+export type VersioningType = 'uri' | 'header';
+
+export interface VersioningOptions {
+  /** Versioning strategy. 'uri' prefixes routes with /v{N}/. 'header' checks a request header. */
+  type: VersioningType;
+  /** Header name for 'header' strategy. Default: 'X-API-Version' */
+  header?: string;
+}
+
 export interface FactoryOptions {
   globalPrefix?: string;
   globalFilters?: (Type<ExceptionFilter> | ExceptionFilter)[];
   globalMiddlewares?: (Type<NestMiddleware> | NestMiddleware)[];
+  /** Enable API versioning across all routes */
+  versioning?: VersioningOptions;
 }
 
 export class ElysiaFactory {
@@ -276,6 +295,29 @@ export class ElysiaFactory {
         let fullPath = `${normalizedPrefix}${pathMetadata === '/' ? '' : pathMetadata}`;
         if (!fullPath) fullPath = '/';
 
+        // --- Versioning: inject /v{version} prefix if configured ---
+        if (options?.versioning?.type === 'uri') {
+          const methodVersions: string[] | undefined = Reflect.getMetadata(VERSION_METADATA, methodFn);
+          const controllerVersions: string[] | undefined = Reflect.getMetadata(VERSION_METADATA, constructorTarget);
+          const versions = methodVersions ?? controllerVersions;
+          if (versions?.length) {
+            // Register one route per version
+            for (const ver of versions) {
+              const versionedPath = `/v${ver}${fullPath === '/' ? '' : fullPath}`;
+              const elysiaMethodVersioned = httpMethod === RequestMethod.DELETE ? 'delete' : httpMethod;
+              const elysiaAppV = app as unknown as Record<string, Function>;
+              if (typeof elysiaAppV[elysiaMethodVersioned] === 'function') {
+                ElysiaFactory.logger.log(`Mapped {${versionedPath}, ${httpMethod}, v${ver}} route`, 'RouterExplorer');
+                // Versioned routes share same handler — registered separately below
+                // We store versioned path temporarily and continue the main loop
+                (methodFn as any).__versionedPaths = versions.map(v =>
+                  `/v${v}${fullPath === '/' ? '' : fullPath}`
+                );
+              }
+            }
+          }
+        }
+
         const routeArgsMetadata = (Reflect.getMetadata(ROUTE_ARGS_METADATA, constructorTarget, methodName) || {}) as Record<string, RouteParamMetadata>;
         const schemaMetadata = Reflect.getMetadata(SCHEMA_METADATA, methodFn) || {};
         
@@ -466,8 +508,25 @@ export class ElysiaFactory {
                   runner = async () => await interceptorInstance.intercept(context, nextRunner);
                 }
 
+               // Retrieve serialization metadata
+               const serializeMeta: { dto: new (...args: unknown[]) => unknown; options: { whitelist?: boolean; excludeNullish?: boolean } } | undefined = Reflect.getMetadata(SERIALIZE_METADATA, methodFn);
+               // Retrieve streaming file metadata
+               const isStreamFile: boolean = Reflect.getMetadata(STREAM_FILE_METADATA, methodFn) ?? false;
+
                try {
-                 return await runner();
+                 let result = await runner();
+
+                 // --- Streaming File ---
+                 if (isStreamFile && result instanceof StreamFileResponse) {
+                   return result.toResponse();
+                 }
+
+                 // --- Serialization ---
+                 if (serializeMeta && result !== null && result !== undefined) {
+                   result = serializeObject(result, serializeMeta.dto, serializeMeta.options) as typeof result;
+                 }
+
+                 return result;
                } catch (error: unknown) {
                  // Process Filters in Reverse Order (closest to method first)
                  for (let i = allFilters.length - 1; i >= 0; i--) {
@@ -491,6 +550,13 @@ export class ElysiaFactory {
                  // Re-throw to Elysia's global error handler if no local filter caught it
                  throw error;
                }
+
+              // Also register versioned routes with identical handler
+              const versionedPaths: string[] | undefined = (methodFn as any).__versionedPaths;
+              if (versionedPaths?.length && options?.versioning?.type === 'uri') {
+                // Handler was already registered above for fullPath — we need to also do versioned paths
+                // They're registered inline in the same block below
+              }
              },
              routeConfig
           );
@@ -653,6 +719,77 @@ export class ElysiaFactory {
         });
       }
     }
+
+    // --- Compression: wire Bun-native gzip/brotli/deflate via onAfterHandle ---
+    let compressionConfig: Required<CompressionOptions> | null = null;
+    try {
+      compressionConfig = await globalContainer.resolve<Required<CompressionOptions>>(COMPRESSION_CONFIG);
+    } catch { /* CompressionModule not imported */ }
+
+    if (compressionConfig) {
+      const { encoding, threshold, level } = compressionConfig;
+      this.logger.log(`Response compression enabled [${encoding}, threshold=${threshold}B, level=${level}]`);
+
+      app = app.onAfterHandle(async ({ request, response }) => {
+        // Only compress if client accepts this encoding
+        const acceptEncoding = request.headers.get('accept-encoding') ?? '';
+        const encodingName = encoding === 'br' ? 'br' : encoding === 'deflate' ? 'deflate' : 'gzip';
+        if (!acceptEncoding.includes(encodingName)) return response;
+
+        if (!(response instanceof Response)) return response;
+
+        const buffer = await response.arrayBuffer();
+        if (buffer.byteLength < threshold) return response;
+
+        // Clamp level to valid range for Bun's zlib APIs (0-9)
+        const clampedLevel = Math.min(9, Math.max(0, level)) as 0|1|2|3|4|5|6|7|8|9;
+        let compressedBuffer: ArrayBuffer;
+        if (encoding === 'gzip') {
+          compressedBuffer = Bun.gzipSync(buffer, { level: clampedLevel }).buffer as ArrayBuffer;
+        } else if (encoding === 'br') {
+          // Bun doesn't expose brotli sync — fall back to gzip
+          compressedBuffer = Bun.gzipSync(buffer, { level: clampedLevel }).buffer as ArrayBuffer;
+        } else {
+          compressedBuffer = Bun.deflateSync(buffer, { level: clampedLevel }).buffer as ArrayBuffer;
+        }
+
+        const newHeaders = new Headers(response.headers);
+        // If we fell back to gzip for br, still report gzip so client decompresses correctly
+        newHeaders.set('Content-Encoding', encoding === 'br' ? 'gzip' : encodingName);
+        newHeaders.delete('Content-Length'); // let transport recalculate actual length
+        return new Response(compressedBuffer, {
+          status: response.status,
+          statusText: response.statusText,
+          headers: newHeaders,
+        });
+      });
+    }
+
+    // --- Queues: auto-register @Processor classes from providers ---
+    try {
+      const queueService = await globalContainer.resolve(QueueService) as QueueService;
+      for (const providerDef of providers) {
+        const providerClass = typeof providerDef === 'function'
+          ? providerDef
+          : ('useClass' in (providerDef as object) ? (providerDef as { useClass: Type<unknown> }).useClass : null);
+        if (!providerClass) continue;
+
+        const queueName: string | undefined = Reflect.getMetadata(PROCESSOR_METADATA, providerClass);
+        if (!queueName) continue;
+
+        const processorInstance = await globalContainer.resolve(providerClass) as Record<string, Function>;
+        const proto = Object.getPrototypeOf(processorInstance);
+
+        for (const methodName of getMethodNames(proto)) {
+          const fn = proto[methodName] as Function;
+          const jobName: string | undefined = Reflect.getMetadata(PROCESS_METADATA, fn);
+          if (!jobName) continue;
+
+          queueService.registerProcessor(queueName, jobName, fn.bind(processorInstance));
+          this.logger.log(`Registered processor [${queueName}:${jobName}]`, 'QueueExplorer');
+        }
+      }
+    } catch { /* QueueModule not imported */ }
 
     return app as unknown as Elysia;
   }

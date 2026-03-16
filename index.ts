@@ -25,6 +25,10 @@ export * from './src/decorators/use-middleware.decorator';
 export * from './src/decorators/cache.decorator';
 export * from './src/decorators/websocket.decorator';
 export * from './src/decorators/sse.decorator';
+export * from './src/decorators/stream-file.decorator';
+export * from './src/decorators/version.decorator';
+export * from './src/decorators/serialize.decorator';
+export * from './src/decorators/queue.decorator';
 
 // Exceptions
 export * from './src/exceptions';
@@ -65,3 +69,19 @@ export * from './src/health';
 
 // AI Module
 export * from './src/ai';
+
+// Streaming Files
+export * from './src/streaming/stream-file.response';
+
+// Versioning (re-exported via decorators above)
+
+// Serialization
+export * from './src/serialization/serializer';
+
+// Compression
+export * from './src/compression/compression.module';
+
+// Queues
+export * from './src/queue/queue.service';
+export * from './src/queue/queue.module';
+
