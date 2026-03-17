@@ -1,6 +1,6 @@
 # Introduction
 
-**Next.js Backend** is a library for Node.js / Bun built to create flexible, high-performance, and easily scalable backend applications.
+**Next.js Backend** is a framework for **Bun** and **Node.js ≥ 20** designed to build flexible, high-performance, and scalable backend applications.
 
 The core idea came from the **limitations** of writing APIs directly inside the Next.js ecosystem (API Routes / Route Handlers). The lack of a clear software architecture, Dependency Injection, and standard middleware flows made managing large-scale Next.js fullstack projects complex and hard to maintain.
 
@@ -37,7 +37,19 @@ This library provides a standard out-of-the-box architecture, inspired by the pr
 
 At the low level, the library uses ElysiaJS's high-speed HTTP engine for the network layer, while layering a solid software architecture on top.
 
-This lets you leverage 100% of Elysia's rich plugin ecosystem (Swagger, JWT, WebSockets) while maintaining an "Enterprise-ready" code structure.
+This lets you leverage 100% of Elysia's rich plugin ecosystem (Swagger, JWT, WebSockets) while maintaining a production-grade code structure.
+
+### Runtime Compatibility
+
+The framework runs identically on both runtimes. Runtime-specific APIs are abstracted behind automatic detection:
+
+| Subsystem | Bun | Node.js ≥ 20 |
+|-----------|-----|-------------|
+| HTTP server | Elysia on Bun | Elysia on Node.js |
+| Password hashing | `Bun.password` (native) | `bcryptjs` / `argon2` |
+| Response compression | `Bun.gzipSync` / `deflateSync` | `node:zlib` built-in |
+| WebSocket | Bun native WS | WS via Elysia |
+| All other APIs | Web-standard (`Request`, `Response`, `Headers`, `crypto`) | Same |
 
 ## Installation
 

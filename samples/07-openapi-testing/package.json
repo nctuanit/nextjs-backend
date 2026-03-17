@@ -1,0 +1,27 @@
+{
+  "name": "07-openapi-testing",
+  "version": "1.0.0",
+  "private": true,
+  "description": "next-js-backend sample: OpenAPI/Swagger, Test.createTestingModule()",
+  "scripts": {
+    "dev": "next dev -p 3007",
+    "build": "next build",
+    "start": "next start -p 3007"
+  },
+  "dependencies": {
+    "next": "^14.2.0",
+    "react": "^18.3.1",
+    "react-dom": "^18.3.1",
+    "elysia": "^1.4.27",
+    "@elysiajs/swagger": "^1.3.1",
+    "next-js-backend": "file:../..",
+    "reflect-metadata": "^0.2.2"
+  },
+  "devDependencies": {
+    "@types/node": "^20",
+    "@types/react": "^18",
+    "@types/react-dom": "^18",
+    "typescript": "^5.0.0"
+  },
+  "type": "module"
+}

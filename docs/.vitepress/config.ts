@@ -33,6 +33,7 @@ const enSidebar = {
       text: 'Extensions',
       items: [
         { text: 'Cache Module', link: '/guide/cache-module' },
+        { text: 'Compression Module', link: '/guide/compression-module' },
         { text: 'Schedule & Events', link: '/guide/schedule-events' },
         { text: 'WebSocket Gateway', link: '/guide/websocket-gateway' },
         { text: 'SSE', link: '/guide/sse' },
@@ -111,6 +112,7 @@ const viSidebar = {
       text: 'Mở Rộng',
       items: [
         { text: 'Cache Module', link: '/vi/guide/cache-module' },
+        { text: 'Compression Module', link: '/vi/guide/compression-module' },
         { text: 'Schedule & Events', link: '/vi/guide/schedule-events' },
         { text: 'WebSocket Gateway', link: '/vi/guide/websocket-gateway' },
         { text: 'SSE', link: '/vi/guide/sse' },
@@ -158,7 +160,7 @@ const viSidebar = {
 
 export default defineConfig({
   title: 'Next.js Backend',
-  description: 'NestJS-style architecture for Bun & ElysiaJS',
+  description: 'NestJS-style architecture for Bun & Node.js with ElysiaJS',
   base: '/nextjs-backend/',
 
   head: [

@@ -1,6 +1,7 @@
 // Core
 export * from './src/constants';
 export * from './src/interfaces';
+export * from './src/types.augment';
 export * from './src/di/injectable.decorator';
 export * from './src/di/inject.decorator';
 export * from './src/di/provider';
@@ -29,6 +30,8 @@ export * from './src/decorators/stream-file.decorator';
 export * from './src/decorators/version.decorator';
 export * from './src/decorators/serialize.decorator';
 export * from './src/decorators/queue.decorator';
+export * from './src/decorators/set-metadata.decorator';
+export * from './src/decorators/apply-decorators';
 
 // Exceptions
 export * from './src/exceptions';

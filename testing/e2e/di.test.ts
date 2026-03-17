@@ -2,6 +2,8 @@ import { describe, expect, it, beforeAll } from 'bun:test';
 import { Controller, Get, ElysiaFactory, Injectable } from '../../index';
 import { Module } from '../../index';
 import { DynamicModule } from '../../src/interfaces';
+import { TestRequestBuilder } from '../../src/testing/request-builder';
+
 
 @Injectable()
 class RandomizerService {
@@ -83,8 +85,13 @@ describe('E2E Dependency Injection (ElysiaFactory)', () => {
     app = await ElysiaFactory.create(DIModule);
   });
   
-  const req = (path: string, options?: RequestInit) => 
-    app.handle(new Request(`http://localhost${path}`, options));
+  const req = (path: string, options?: any) => {
+    const builder = new TestRequestBuilder().path(path);
+    if (options?.method) builder.method(options.method);
+    if (options?.headers) builder.headers(options.headers);
+    if (options?.body) builder.body(options.body);
+    return app.handle(builder.build());
+  };
 
   it('should correctly build dependencies inside ElysiaFactory via globalContainer', async () => {
     const res = await req('/di');

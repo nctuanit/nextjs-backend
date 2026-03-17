@@ -18,7 +18,7 @@ export class LoggingInterceptor implements NestInterceptor {
 
     const result = await next();
 
-    console.log(`[${context.request.method}] ${url} — ${Date.now() - start}ms`);
+    Logger.log(`[${context.request.method}] ${url} — ${Date.now() - start}ms`);
     return result;
   }
 }

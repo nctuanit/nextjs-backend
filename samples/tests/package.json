@@ -1,0 +1,25 @@
+{
+  "name": "samples-tests",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Integration tests for all next-js-backend samples",
+  "scripts": {
+    "test": "bun test --timeout 15000",
+    "test:01": "bun test 01-crud-basics.test.ts --timeout 15000",
+    "test:02": "bun test 02-request-pipeline.test.ts --timeout 15000",
+    "test:03": "bun test 03-auth.test.ts --timeout 15000",
+    "test:04": "bun test 04-realtime.test.ts --timeout 15000",
+    "test:05": "bun test 05-modules.test.ts --timeout 15000",
+    "test:06": "bun test 06-background.test.ts --timeout 15000",
+    "test:07": "bun test 07-openapi-testing.test.ts --timeout 15000"
+  },
+  "dependencies": {
+    "elysia": "^1.4.27",
+    "next-js-backend": "file:../..",
+    "reflect-metadata": "^0.2.2"
+  },
+  "devDependencies": {
+    "@types/bun": "latest",
+    "typescript": "^5.0.0"
+  }
+}

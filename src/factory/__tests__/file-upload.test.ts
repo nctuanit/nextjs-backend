@@ -4,6 +4,7 @@ import { Post } from '../../decorators/method.decorator';
 import { File, Files } from '../../decorators/param.decorator';
 import { Module } from '../../decorators/module.decorator';
 import { ElysiaFactory } from '../elysia-factory';
+import { TestRequestBuilder } from '../../testing/request-builder';
 
 @Controller('/upload')
 class UploadController {
@@ -36,10 +37,11 @@ describe('File Upload Decorators', () => {
     const file = new globalThis.File(['hello world'], 'avatar.jpg', { type: 'image/jpeg' });
     formData.append('avatar', file);
 
-    const req = new Request('http://localhost/upload/single', {
-      method: 'POST',
-      body: formData,
-    });
+    const req = new TestRequestBuilder()
+      .method('POST')
+      .path('/upload/single')
+      .body(formData)
+      .build();
 
     const res = await app.handle(req);
     const json = await res.json();
@@ -55,10 +57,11 @@ describe('File Upload Decorators', () => {
     formData.append('documents', new globalThis.File(['doc1'], 'doc1.pdf'));
     formData.append('documents', new globalThis.File(['doc22'], 'doc2.pdf'));
 
-    const req = new Request('http://localhost/upload/multiple', {
-      method: 'POST',
-      body: formData,
-    });
+    const req = new TestRequestBuilder()
+      .method('POST')
+      .path('/upload/multiple')
+      .body(formData)
+      .build();
 
     const res = await app.handle(req);
     const json = await res.json() ;
@@ -74,10 +77,11 @@ describe('File Upload Decorators', () => {
     const formData = new FormData();
     // Intentionally omit appending 'avatar'
 
-    const req = new Request('http://localhost/upload/single', {
-      method: 'POST',
-      body: formData,
-    });
+    const req = new TestRequestBuilder()
+      .method('POST')
+      .path('/upload/single')
+      .body(formData)
+      .build();
 
     const res = await app.handle(req);
     const json = await res.json();
@@ -95,10 +99,11 @@ describe('File Upload Decorators', () => {
     // Append a string instead of a File object
     formData.append('avatar', 'just text string');
 
-    const req = new Request('http://localhost/upload/single', {
-      method: 'POST',
-      body: formData,
-    });
+    const req = new TestRequestBuilder()
+      .method('POST')
+      .path('/upload/single')
+      .body(formData)
+      .build();
 
     const res = await app.handle(req);
     const json = await res.json() ;

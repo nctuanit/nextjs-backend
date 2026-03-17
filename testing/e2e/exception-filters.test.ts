@@ -4,6 +4,8 @@ import { Controller, Get, ElysiaFactory } from '../../index';
 import { UseFilters, Catch, HttpException, Injectable } from '../../index';
 import { type ExceptionFilter } from '../../src/interfaces';
 import { Module } from '../../index';
+import { TestRequestBuilder } from '../../src/testing/request-builder';
+
 
 class CustomDomainError extends Error {
   constructor(message: string) {
@@ -75,8 +77,13 @@ describe('E2E Exception Filters (@Catch, @UseFilters)', () => {
     app = await ElysiaFactory.create(FilterModule);
   });
 
-  const req = (path: string, options?: RequestInit) =>
-    app.handle(new Request(`http://localhost${path}`, options));
+  const req = (path: string, options?: any) => {
+    const builder = new TestRequestBuilder().path(path);
+    if (options?.method) builder.method(options.method);
+    if (options?.headers) builder.headers(options.headers);
+    if (options?.body) builder.body(options.body);
+    return app.handle(builder.build());
+  };
 
   it('should handle custom domain error with CustomDomainExceptionFilter', async () => {
     const res = await req('/filters/custom-domain-error');

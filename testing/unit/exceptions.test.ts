@@ -23,7 +23,7 @@ describe('Exceptions > HttpException', () => {
   test('should create with response and status', () => {
     const err = new HttpException('Something failed', 400);
     expect(err.getStatus()).toBe(400);
-    expect(err.getResponse()).toBe('Something failed');
+    expect(err.getResponse()).toEqual({ statusCode: 400, message: 'Something failed', error: 'Http' });
   });
 
   test('should accept object response', () => {
@@ -47,19 +47,19 @@ describe('Exceptions > Subclasses', () => {
   test('BadRequestException should be 400', () => {
     const err = new BadRequestException();
     expect(err.getStatus()).toBe(400);
-    expect(err.getResponse()).toBe('Bad Request');
+    expect(err.getResponse()).toEqual({ statusCode: 400, message: 'Bad Request', error: 'Bad Request' });
   });
 
   test('BadRequestException should accept custom message', () => {
     const err = new BadRequestException('Invalid email');
-    expect(err.getResponse()).toBe('Invalid email');
+    expect(err.getResponse()).toEqual({ statusCode: 400, message: 'Invalid email', error: 'Bad Request' });
     expect(err.getStatus()).toBe(400);
   });
 
   test('UnauthorizedException should be 401', () => {
     const err = new UnauthorizedException();
     expect(err.getStatus()).toBe(401);
-    expect(err.getResponse()).toBe('Unauthorized');
+    expect(err.getResponse()).toEqual({ statusCode: 401, message: 'Unauthorized', error: 'Unauthorized' });
   });
 
   test('ForbiddenException should be 403', () => {
@@ -74,7 +74,7 @@ describe('Exceptions > Subclasses', () => {
 
   test('NotFoundException should accept custom message', () => {
     const err = new NotFoundException('User not found');
-    expect(err.getResponse()).toBe('User not found');
+    expect(err.getResponse()).toEqual({ statusCode: 404, message: 'User not found', error: 'Not Found' });
   });
 
   test('InternalServerErrorException should be 500', () => {

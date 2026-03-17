@@ -18,14 +18,14 @@ import {
 export class ChatGateway {
   @OnOpen()
   onOpen(ctx: WsContext) {
-    console.log('Client connected:', ctx.id);
+    Logger.log('Client connected:', ctx.id);
     ctx.send(JSON.stringify({ event: 'welcome', data: 'Connected!' }));
   }
 
   @OnMessage()
   onMessage(ctx: WsContext, message: string | Buffer) {
     const data = JSON.parse(message.toString());
-    console.log('Received:', data);
+    Logger.log('Received:', data);
 
     // Echo back
     ctx.send(JSON.stringify({ event: 'echo', data }));
@@ -33,7 +33,7 @@ export class ChatGateway {
 
   @OnClose()
   onClose(ctx: WsContext) {
-    console.log('Client disconnected:', ctx.id);
+    Logger.log('Client disconnected:', ctx.id);
   }
 }
 ```
@@ -93,6 +93,6 @@ ws.onopen = () => {
 };
 
 ws.onmessage = ({ data }) => {
-  console.log(JSON.parse(data));
+  Logger.log(JSON.parse(data));
 };
 ```

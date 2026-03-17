@@ -20,15 +20,18 @@ import { ElysiaFactory } from '../factory/elysia-factory';
  */
 export class TestingModule {
   private container: Container;
+  private imports: Type<unknown>[];
   private controllers: Type<unknown>[];
   private providers: Provider[];
   private overrides: Map<InjectionToken, Provider> = new Map();
 
   constructor(
+    imports: Type<unknown>[],
     controllers: Type<unknown>[],
     providers: Provider[],
   ) {
     this.container = new Container();
+    this.imports = imports;
     this.controllers = controllers;
     this.providers = providers;
   }
@@ -90,7 +93,7 @@ export class TestingModule {
     class TestModule {}
     Reflect.defineMetadata(MODULE_METADATA.CONTROLLERS, controllers, TestModule);
     Reflect.defineMetadata(MODULE_METADATA.PROVIDERS, providers, TestModule);
-    Reflect.defineMetadata(MODULE_METADATA.IMPORTS, [], TestModule);
+    Reflect.defineMetadata(MODULE_METADATA.IMPORTS, this.imports, TestModule);
     Reflect.defineMetadata(MODULE_METADATA.EXPORTS, [], TestModule);
 
     return ElysiaFactory.create(TestModule);
@@ -111,10 +114,12 @@ export class TestingModule {
  */
 export class Test {
   static createTestingModule(metadata: {
+    imports?: Type<unknown>[];
     controllers?: Type<unknown>[];
     providers?: Provider[];
   }): TestingModule {
     return new TestingModule(
+      metadata.imports || [],
       metadata.controllers || [],
       metadata.providers || [],
     );

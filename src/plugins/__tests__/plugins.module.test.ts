@@ -5,6 +5,8 @@ import { Get } from '../../decorators/method.decorator';
 import { RateLimit } from '../../decorators/rate-limit.decorator';
 import { PluginsModule } from '../plugins.module';
 import { Module } from '../../decorators/module.decorator';
+import { TestRequestBuilder } from '../../testing/request-builder';
+
 
 describe('Plugins & RateLimit Module', () => {
   @Controller('/plugin-test')
@@ -33,12 +35,13 @@ describe('Plugins & RateLimit Module', () => {
     const app = await ElysiaFactory.create(TestAppModule);
     
     // Test base CORS headers via OPTIONS request
-    const response = await app.handle(new Request('http://localhost/plugin-test/normal', {
-      method: 'OPTIONS',
-      headers: {
-        'Origin': 'https://example.com' // Using https for standard cors tests
-      }
-    }));
+    const response = await app.handle(
+      new TestRequestBuilder()
+        .method('OPTIONS')
+        .path('/plugin-test/normal')
+        .headers({ 'Origin': 'https://example.com' })
+        .build()
+    );
     
     expect(response.status).toBe(204);
     // elysia-cors mirrors the origin if no specific origins are defined
@@ -48,7 +51,7 @@ describe('Plugins & RateLimit Module', () => {
   it('should attach Helmet security headers to standard requests', async () => {
     const app = await ElysiaFactory.create(TestAppModule);
     
-    const response = await app.handle(new Request('http://localhost/plugin-test/normal'));
+    const response = await app.handle(new TestRequestBuilder().path('/plugin-test/normal').build());
     
     expect(response.status).toBe(200);
     // basic helmet assertions
@@ -61,9 +64,12 @@ describe('Plugins & RateLimit Module', () => {
     const app = await ElysiaFactory.create(TestAppModule);
     
     // Pass standard IP headers so rate-limit recognizes uniqueness
-    const makeRequest = () => app.handle(new Request('http://localhost/plugin-test/limited', {
-      headers: { 'x-forwarded-for': '127.0.0.1' }
-    }));
+    const makeRequest = () => app.handle(
+      new TestRequestBuilder()
+        .path('/plugin-test/limited')
+        .headers({ 'x-forwarded-for': '127.0.0.1' })
+        .build()
+    );
 
     // Allowed requests (limit is 2)
     const res1 = await makeRequest();
@@ -83,7 +89,7 @@ describe('Plugins & RateLimit Module', () => {
   it('should not rate limit routes without @RateLimit decorator', async () => {
     const app = await ElysiaFactory.create(TestAppModule);
     
-    const makeRequest = () => app.handle(new Request('http://localhost/plugin-test/normal'));
+    const makeRequest = () => app.handle(new TestRequestBuilder().path('/plugin-test/normal').build());
 
     // Fire 5 rapid requests, all should pass 200 OK since no rate limit applies
     for (let i = 0; i < 5; i++) {

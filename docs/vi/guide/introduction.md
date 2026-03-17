@@ -62,5 +62,5 @@ import { AppModule } from './app.module';
 
 const app = await ElysiaFactory.create(AppModule);
 app.listen(3000);
-console.log('Server đang chạy tại http://localhost:3000 🚀');
+Logger.log('Server đang chạy tại http://localhost:3000 🚀');
 ```

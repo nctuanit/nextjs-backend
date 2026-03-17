@@ -12,7 +12,7 @@ export const ON_EVENT_METADATA = '__on_event__';
  * export class NotificationService {
  *   @OnEvent('user.created')
  *   async sendWelcomeEmail(payload: { email: string }) {
- *     console.log('Sending welcome email to', payload.email);
+ *     Logger.log('Sending welcome email to ' + payload.email);
  *   }
  * }
  * ```

@@ -9,6 +9,8 @@ import 'reflect-metadata';
 import { Test } from '../../src/testing';
 import { Injectable } from '../../src/di/injectable.decorator';
 import { Controller, Get, Module } from '../../index';
+import { TestRequestBuilder } from '../../src/testing/request-builder';
+
 
 // ═══════════════════════════════════════════════════════════════════
 // createTestingModule
@@ -89,7 +91,7 @@ describe('Testing > createApp', () => {
     }).compile();
 
     const app = await module.createApp();
-    const res = await app.handle(new Request('http://localhost/todos'));
+    const res = await app.handle(new TestRequestBuilder().path('/todos').build());
 
     expect(res.status).toBe(200);
     const data = await res.json() ;
@@ -116,7 +118,7 @@ describe('Testing > createApp', () => {
       .compile();
 
     const app = await module.createApp();
-    const res = await app.handle(new Request('http://localhost/data'));
+    const res = await app.handle(new TestRequestBuilder().path('/data').build());
     const data = await res.json() ;
     expect(data.value).toBe('mocked');
   });

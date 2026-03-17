@@ -7,6 +7,7 @@ import { DevModeService } from '../dev-mode.service';
 import { Module } from '../../decorators/module.decorator';
 import { globalContainer } from '../../di/container';
 import { Body } from '../../decorators/param.decorator';
+import { TestRequestBuilder } from '../../testing/request-builder';
 
 describe('DevMode Request Profiler', () => {
   @Controller('/dev-target')
@@ -42,7 +43,7 @@ describe('DevMode Request Profiler', () => {
     // reset from prev runs
     service.clearHistory();
 
-    const response = await app.handle(new Request('http://localhost/dev-target/fast?search=dev'));
+    const response = await app.handle(new TestRequestBuilder().path('/dev-target/fast').query({ search: 'dev' }).build());
     await new Promise(resolve => setTimeout(resolve, 10)); // wait for background hook
     expect(response.status).toBe(200);
 
@@ -67,11 +68,13 @@ describe('DevMode Request Profiler', () => {
     service.clearHistory();
 
     const payload = JSON.stringify({ item: 'test_payload' });
-    const response = await app.handle(new Request('http://localhost/dev-target/data', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ item: 'test_payload' })
-    }));
+    const response = await app.handle(
+      new TestRequestBuilder()
+        .method('POST')
+        .path('/dev-target/data')
+        .body({ item: 'test_payload' })
+        .build()
+    );
     await new Promise(resolve => setTimeout(resolve, 10));
 
     expect(response.status).toBe(200);
@@ -89,7 +92,7 @@ describe('DevMode Request Profiler', () => {
 
      // Fire 15 requests (max configured is 10)
      for(let i=0; i<15; i++) {
-        await app.handle(new Request('http://localhost/dev-target/fast'));
+        await app.handle(new TestRequestBuilder().path('/dev-target/fast').build());
      }
      await new Promise(resolve => setTimeout(resolve, 10));
 
@@ -103,10 +106,10 @@ describe('DevMode Request Profiler', () => {
     const service = await globalContainer.resolve(DevModeService) as DevModeService;
     service.clearHistory();
 
-    await app.handle(new Request('http://localhost/dev-target/fast'));
-    await app.handle(new Request('http://localhost/dev-target/fast')).catch(() => {});
-    await app.handle(new Request('http://localhost/dev-target/error')).catch(() => {}); // Will hit 500 error handler
-    await app.handle(new Request('http://localhost/dev-target/error')).catch(() => {});
+    await app.handle(new TestRequestBuilder().path('/dev-target/fast').build());
+    await app.handle(new TestRequestBuilder().path('/dev-target/fast').build()).catch(() => {});
+    await app.handle(new TestRequestBuilder().path('/dev-target/error').build()).catch(() => {}); // Will hit 500 error handler
+    await app.handle(new TestRequestBuilder().path('/dev-target/error').build()).catch(() => {});
     await new Promise(resolve => setTimeout(resolve, 10));
 
     const stats = service.getStats();

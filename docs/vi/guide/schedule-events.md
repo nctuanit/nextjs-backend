@@ -21,7 +21,7 @@ export class AppModule {}
 export class TasksService {
   @Cron('0 * * * *')  // mỗi giờ một lần
   async chayMoiGio() {
-    console.log('Đang chạy task hàng giờ...');
+    Logger.log('Đang chạy task hàng giờ...');
   }
 
   @Cron('0 0 * * *')  // nửa đêm mỗi ngày

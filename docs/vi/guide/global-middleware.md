@@ -19,7 +19,7 @@ export class LoggerMiddleware implements NestMiddleware {
 
     await next();
 
-    console.log(`[${req.method}] ${url} ${Date.now() - start}ms`);
+    Logger.log(`[${req.method}] ${url} ${Date.now() - start}ms`);
   }
 }
 ```
@@ -57,7 +57,7 @@ export class BodyLoggerMiddleware implements NestMiddleware {
     if (req.method !== 'GET') {
       const cloned = req.clone();
       const body = await cloned.json().catch(() => null);
-      console.log('Request body:', body);
+      Logger.log('Request body:', body);
     }
     await next();
   }
@@ -71,7 +71,7 @@ export class BodyLoggerMiddleware implements NestMiddleware {
 @Middleware()
 export class RequestIdMiddleware implements NestMiddleware {
   async use(req: Request, res: unknown, next: () => void | Promise<void>) {
-    (req as any).id = crypto.randomUUID();
+    req.id = crypto.randomUUID();
     await next();
   }
 }

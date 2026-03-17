@@ -64,7 +64,7 @@ export class AiController {
 const es = new EventSource('/events/live');
 
 es.onmessage = ({ data }) => {
-  console.log(JSON.parse(data));
+  Logger.log(JSON.parse(data));
 };
 
 es.addEventListener('notification', ({ data }) => {

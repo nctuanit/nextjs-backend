@@ -1,6 +1,8 @@
 import { describe, expect, it, beforeAll } from 'bun:test';
 import { Controller, Get, Post, Body, Param, Query, Headers, ElysiaFactory } from '../../index';
 import { Module } from '../../index';
+import { TestRequestBuilder } from '../../src/testing/request-builder';
+
 
 @Controller('/routing')
 class RoutingController {
@@ -43,8 +45,13 @@ describe('E2E Routing & Parameters extraction', () => {
     app = await ElysiaFactory.create(RoutingModule);
   });
   
-  const req = (path: string, options?: RequestInit) => 
-    app.handle(new Request(`http://localhost${path}`, options));
+  const req = (path: string, options?: any) => {
+    const builder = new TestRequestBuilder().path(path);
+    if (options?.method) builder.method(options.method);
+    if (options?.headers) builder.headers(options.headers);
+    if (options?.body) builder.body(options.body);
+    return app.handle(builder.build());
+  };
 
   it('should handle standard @Get', async () => {
     const res = await req('/routing');

@@ -1,0 +1,27 @@
+{
+  "name": "sample-13-ai",
+  "version": "0.1.0",
+  "private": true,
+  "scripts": {
+    "dev": "next dev -p 3013",
+    "build": "next build",
+    "start": "next start -p 3013"
+  },
+  "dependencies": {
+    "next": "^14.0.0",
+    "react": "^18.0.0",
+    "react-dom": "^18.0.0",
+    "next-js-backend": "file:../..",
+    "elysia": "^1.4.27",
+    "@sinclair/typebox": "^0.34.0",
+    "openai": "^4.0.0",
+    "reflect-metadata": "^0.2.2"
+  },
+  "devDependencies": {
+    "@types/node": "^20.0.0",
+    "@types/react": "^18.0.0",
+    "@types/react-dom": "^18.0.0",
+    "typescript": "^5.0.0"
+  },
+  "type": "module"
+}

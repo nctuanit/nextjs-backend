@@ -57,4 +57,14 @@ export class StreamFileResponse {
       },
     });
   }
+
+  /**
+   * Helper method to create a StreamFileResponse easily from a filePath or blob.
+   */
+  static from(
+    source: ReadableStream | Blob | ArrayBuffer | Uint8Array,
+    options: StreamFileOptions = {},
+  ): StreamFileResponse {
+    return new StreamFileResponse(source, options);
+  }
 }

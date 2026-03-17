@@ -8,6 +8,8 @@ import { Injectable } from '../../src/di/injectable.decorator';
 import { Module } from '../../src/decorators/module.decorator';
 import { Sse } from '../../src/decorators/sse.decorator';
 import { ElysiaFactory } from '../../src/factory/elysia-factory';
+import { TestRequestBuilder } from '../../src/testing/request-builder';
+
 
 @Controller('/stream')
 class StreamController {
@@ -38,7 +40,7 @@ describe('SSE (Server-Sent Events)', () => {
   test('should stream data from async generator', async () => {
     const app = await ElysiaFactory.create(StreamModule);
     
-    const response = await app.handle(new Request('http://localhost/stream/events'));
+    const response = await app.handle(new TestRequestBuilder().path('/stream/events').build());
     expect(response.status).toBe(200);
     expect(response.headers.get('content-type')).toBe('text/event-stream');
     
@@ -50,7 +52,7 @@ describe('SSE (Server-Sent Events)', () => {
   test('should stream simple string data', async () => {
     const app = await ElysiaFactory.create(StreamModule);
     
-    const response = await app.handle(new Request('http://localhost/stream/simple'));
+    const response = await app.handle(new TestRequestBuilder().path('/stream/simple').build());
     expect(response.status).toBe(200);
     
     const text = await response.text();
@@ -61,7 +63,7 @@ describe('SSE (Server-Sent Events)', () => {
   test('should support named events', async () => {
     const app = await ElysiaFactory.create(StreamModule);
     
-    const response = await app.handle(new Request('http://localhost/stream/with-event'));
+    const response = await app.handle(new TestRequestBuilder().path('/stream/with-event').build());
     expect(response.status).toBe(200);
     
     const text = await response.text();

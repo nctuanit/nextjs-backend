@@ -7,6 +7,8 @@ import { Controller } from '../../src/decorators/controller.decorator';
 import { Get } from '../../src/decorators/method.decorator';
 import { UseGuards } from '../../src/decorators/guard.decorator';
 import { Req as RequestDecorator } from '../../src/decorators/param.decorator';
+import { TestRequestBuilder } from '../../src/testing/request-builder';
+
 
 describe('JWT Authentication & AuthGuard', () => {
   it('should sign, verify tokens and protect routes with AuthGuard', async () => {
@@ -46,7 +48,7 @@ describe('JWT Authentication & AuthGuard', () => {
 
     // 1. Unauthenticated Request (Should fail with 401)
     const failResp = await app.handle(
-      new Request('http://localhost/auth/profile', { method: 'GET' })
+      new TestRequestBuilder().method('GET').path('/auth/profile').build()
     );
     expect(failResp.status).toBe(401);
     const failText = await failResp.text();
@@ -54,7 +56,7 @@ describe('JWT Authentication & AuthGuard', () => {
 
     // 2. Generate Token
     const loginResp = await app.handle(
-      new Request('http://localhost/auth/login', { method: 'GET' })
+      new TestRequestBuilder().method('GET').path('/auth/login').build()
     );
     expect(loginResp.status).toBe(200);
     const { token } = (await loginResp.json()) ;
@@ -63,10 +65,11 @@ describe('JWT Authentication & AuthGuard', () => {
 
     // 3. Invalid Token Request (Should fail with 401)
     const invalidResp = await app.handle(
-      new Request('http://localhost/auth/profile', { 
-        method: 'GET',
-        headers: { Authorization: `Bearer ${token}invalid` }
-      })
+      new TestRequestBuilder()
+        .method('GET')
+        .path('/auth/profile')
+        .headers({ Authorization: `Bearer ${token}invalid` })
+        .build()
     );
     expect(invalidResp.status).toBe(401);
 
@@ -76,10 +79,11 @@ describe('JWT Authentication & AuthGuard', () => {
     // In Elysia, setting `context.user = payload` does not put it on `context.request`.
     // Let's modify the AuthGuard inside testing scope if needed, but for now we'll check if status is 200.
     const successResp = await app.handle(
-      new Request('http://localhost/auth/profile', { 
-        method: 'GET',
-        headers: { Authorization: `Bearer ${token}` }
-      })
+      new TestRequestBuilder()
+        .method('GET')
+        .path('/auth/profile')
+        .headers({ Authorization: `Bearer ${token}` })
+        .build()
     );
     
     expect(successResp.status).toBe(200);

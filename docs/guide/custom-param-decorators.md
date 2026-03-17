@@ -10,7 +10,7 @@ import type { Context } from 'elysia';
 
 export const CurrentUser = createParamDecorator(
   (data: string | undefined, ctx: Context) => {
-    const user = (ctx as any).user; // set by AuthGuard
+    const user = ctx.user; // set by AuthGuard
     return data ? user?.[data] : user;
   },
 );

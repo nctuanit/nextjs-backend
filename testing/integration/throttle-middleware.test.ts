@@ -11,6 +11,8 @@ import { Controller, Get, Module, Injectable } from '../../index';
 import { ElysiaFactory } from '../../src/factory/elysia-factory';
 import { Throttle } from '../../src/decorators/throttle.decorator';
 import { UseMiddleware } from '../../src/decorators/use-middleware.decorator';
+import { TestRequestBuilder } from '../../src/testing/request-builder';
+
 
 // ═══════════════════════════════════════════════════════════════════
 // @Throttle Integration
@@ -31,7 +33,7 @@ describe('@Throttle > HTTP Integration', () => {
     const app = await ElysiaFactory.create(App);
 
     // First request should succeed
-    const res1 = await app.handle(new Request('http://localhost/api/data'));
+    const res1 = await app.handle(new TestRequestBuilder().path('/api/data').build());
     expect(res1.status).toBe(200);
     const data = await res1.json() ;
     expect(data.ok).toBe(true);
@@ -53,10 +55,10 @@ describe('@Throttle > HTTP Integration', () => {
 
     const app = await ElysiaFactory.create(App);
 
-    const resA = await app.handle(new Request('http://localhost/limited/a'));
+    const resA = await app.handle(new TestRequestBuilder().path('/limited/a').build());
     expect(resA.status).toBe(200);
 
-    const resB = await app.handle(new Request('http://localhost/limited/b'));
+    const resB = await app.handle(new TestRequestBuilder().path('/limited/b').build());
     expect(resB.status).toBe(200);
   });
 });
@@ -90,7 +92,7 @@ describe('@UseMiddleware > HTTP Integration', () => {
     class App {}
 
     const app = await ElysiaFactory.create(App);
-    const res = await app.handle(new Request('http://localhost/mw/test'));
+    const res = await app.handle(new TestRequestBuilder().path('/mw/test').build());
 
     expect(res.status).toBe(200);
     expect(executionOrder[0]).toBe('middleware');
@@ -120,7 +122,7 @@ describe('@UseMiddleware > HTTP Integration', () => {
     class App {}
 
     const app = await ElysiaFactory.create(App);
-    await app.handle(new Request('http://localhost/multi/test'));
+    await app.handle(new TestRequestBuilder().path('/multi/test').build());
 
     expect(order).toEqual(['mw1', 'mw2', 'handler']);
   });
@@ -142,8 +144,8 @@ describe('@UseMiddleware > HTTP Integration', () => {
     class App {}
 
     const app = await ElysiaFactory.create(App);
-    await app.handle(new Request('http://localhost/cls/a'));
-    await app.handle(new Request('http://localhost/cls/b'));
+    await app.handle(new TestRequestBuilder().path('/cls/a').build());
+    await app.handle(new TestRequestBuilder().path('/cls/b').build());
 
     expect(calls).toEqual(['classMw', 'classMw']);
   });

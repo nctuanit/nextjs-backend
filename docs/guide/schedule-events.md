@@ -26,7 +26,7 @@ import { Cron } from 'next-js-backend';
 export class TasksService {
   @Cron('0 * * * *')  // every hour
   async handleHourlyTask() {
-    console.log('Running hourly task...');
+    Logger.log('Running hourly task...');
   }
 
   @Cron('0 0 * * *')  // daily at midnight

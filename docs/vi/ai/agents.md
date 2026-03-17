@@ -99,7 +99,7 @@ export class ChatService {
     for await (const chunk of this.ai.stream('SupportAgent', message)) {
       if (chunk.type === 'text') yield chunk.content;
       if (chunk.type === 'tool_call') {
-        console.log('Tool called:', chunk.toolName);
+        Logger.log('Tool called:', chunk.toolName);
       }
     }
   }

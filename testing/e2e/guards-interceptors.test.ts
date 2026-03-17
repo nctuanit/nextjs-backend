@@ -4,6 +4,8 @@ import { Controller, Get, ElysiaFactory } from '../../index';
 import { UseGuards, UseInterceptors, ForbiddenException, BadRequestException, HttpException, Injectable } from '../../index';
 import { type CanActivate, type NestInterceptor } from '../../src/interfaces';
 import { Module } from '../../index';
+import { TestRequestBuilder } from '../../src/testing/request-builder';
+
 
 @Injectable()
 class AuthGuard implements CanActivate {
@@ -79,13 +81,18 @@ describe('E2E Guards, Interceptors & Exceptions', () => {
     app = await ElysiaFactory.create(MiddlewareModule);
   });
   
-  const req = (path: string, options?: RequestInit) => 
-    app.handle(new Request(`http://localhost${path}`, options));
+  const req = (path: string, options?: any) => {
+    const builder = new TestRequestBuilder().path(path);
+    if (options?.method) builder.method(options.method);
+    if (options?.headers) builder.headers(options.headers);
+    if (options?.body) builder.body(options.body);
+    return app.handle(builder.build());
+  };
 
   it('should auto-serialize HttpExceptions into status codes and payloads', async () => {
     const res = await req('/middleware/error');
     expect(res.status).toBe(400); // BadRequestException
-    expect(await res.text()).toBe('Custom Error');
+    expect(await res.json()).toEqual({ statusCode: 400, message: 'Custom Error', error: 'Bad Request' });
   });
 
   it('should auto-serialize HttpExceptions with complex object payloads', async () => {
@@ -99,7 +106,7 @@ describe('E2E Guards, Interceptors & Exceptions', () => {
       headers: { authorization: 'Bearer bad_token' }
     });
     expect(res.status).toBe(403);
-    expect(await res.text()).toBe('Forbidden resource');
+    expect(await res.json()).toEqual({ statusCode: 403, message: 'Forbidden resource', error: 'Forbidden' });
   });
 
   it('should allow requests passing Guard authorization', async () => {

@@ -6,6 +6,8 @@ import { ElysiaFactory } from '../../src/factory/elysia-factory';
 import { HealthModule } from '../../src/health';
 import { Throttle, THROTTLE_METADATA } from '../../src/decorators/throttle.decorator';
 import { UseMiddleware, USE_MIDDLEWARE_METADATA } from '../../src/decorators/use-middleware.decorator';
+import { TestRequestBuilder } from '../../src/testing/request-builder';
+
 
 // ─── HealthModule Tests ──────────────────────────────────────────
 
@@ -17,7 +19,7 @@ describe('HealthModule', () => {
     class TestModule {}
 
     const app = await ElysiaFactory.create(TestModule);
-    const response = await app.handle(new Request('http://localhost/health'));
+    const response = await app.handle(new TestRequestBuilder().path('/health').build());
 
     expect(response.status).toBe(200);
     const data = await response.json() ;

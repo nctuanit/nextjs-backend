@@ -93,7 +93,7 @@ it('should call the get_user tool', async () => {
 ## E2E Testing
 
 ```typescript
-import { ElysiaFactory } from 'next-js-backend';
+import { ElysiaFactory, TestRequestBuilder } from 'next-js-backend';
 import { AppModule } from './app.module';
 
 describe('App E2E', () => {
@@ -104,7 +104,7 @@ describe('App E2E', () => {
   });
 
   it('GET / returns 200', async () => {
-    const res = await app.handle(new Request('http://localhost/'));
+    const res = await app.handle(new TestRequestBuilder().path('/').build());
     expect(res.status).toBe(200);
   });
 });

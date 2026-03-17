@@ -3,6 +3,8 @@ import { Controller, Get, ElysiaFactory, Req } from '../../index';
 import { Middleware, Injectable } from '../../index';
 import { type NestMiddleware } from '../../src/interfaces';
 import { Module } from '../../index';
+import { TestRequestBuilder } from '../../src/testing/request-builder';
+
 
 @Injectable()
 class AuditMiddleware implements NestMiddleware {
@@ -41,8 +43,13 @@ describe('E2E Global Middleware (@Middleware, NestMiddleware)', () => {
     });
   });
 
-  const req = (path: string, options?: RequestInit) =>
-    app.handle(new Request(`http://localhost${path}`, options));
+  const req = (path: string, options?: any) => {
+    const builder = new TestRequestBuilder().path(path);
+    if (options?.method) builder.method(options.method);
+    if (options?.headers) builder.headers(options.headers);
+    if (options?.body) builder.body(options.body);
+    return app.handle(builder.build());
+  };
 
   it('should execute global middleware before hitting the controller route', async () => {
     const res = await req('/middleware/test');

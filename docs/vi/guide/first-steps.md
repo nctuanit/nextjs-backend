@@ -57,7 +57,7 @@ import { AppModule } from './modules/app/app.module';
 
 const app = await ElysiaFactory.create(AppModule);
 app.listen(3000, () => {
-  console.log('🚀 Chạy ngon tại http://localhost:3000');
+  Logger.log('🚀 Chạy ngon tại http://localhost:3000');
 });
 ```
 

@@ -2,7 +2,12 @@
 node_modules
 
 # output
+.next
+.next/
+samples/**/.next/
+samples/**/out/
 out
+
 dist
 *.tgz
 

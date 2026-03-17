@@ -1,0 +1,28 @@
+{
+  "name": "03-auth",
+  "version": "1.0.0",
+  "private": true,
+  "description": "next-js-backend sample: JwtModule, AuthGuard, PasswordService, SessionModule",
+  "scripts": {
+    "dev": "next dev -p 3003",
+    "build": "next build",
+    "start": "next start -p 3003"
+  },
+  "dependencies": {
+    "next": "^14.2.0",
+    "react": "^18.3.1",
+    "react-dom": "^18.3.1",
+    "elysia": "^1.4.27",
+    "next-js-backend": "file:../..",
+    "reflect-metadata": "^0.2.2",
+    "bcryptjs": "^3.0.3",
+    "argon2": "^0.44.0"
+  },
+  "devDependencies": {
+    "@types/node": "^20",
+    "@types/react": "^18",
+    "@types/react-dom": "^18",
+    "typescript": "^5.0.0"
+  },
+  "type": "module"
+}

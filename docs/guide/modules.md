@@ -114,6 +114,7 @@ export class AppModule {}
 | `JwtModule` | `import { JwtModule } from 'next-js-backend'` |
 | `SessionModule` | `import { SessionModule } from 'next-js-backend'` |
 | `CacheModule` | `import { CacheModule } from 'next-js-backend'` |
+| `CompressionModule` | `import { CompressionModule } from 'next-js-backend'` |
 | `ScheduleModule` | `import { ScheduleModule } from 'next-js-backend'` |
 | `EventEmitterModule` | `import { EventEmitterModule } from 'next-js-backend'` |
 | `AiModule` | `import { AiModule } from 'next-js-backend'` |

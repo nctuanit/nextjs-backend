@@ -3,6 +3,8 @@ import 'reflect-metadata';
 
 import { Controller, Get, Post, Body, Injectable, Module } from '../../index';
 import { Test } from '../../src/testing/test';
+import { TestRequestBuilder } from '../../src/testing/request-builder';
+
 
 // ─── Test fixtures ───────────────────────────────────────────────
 
@@ -80,7 +82,7 @@ describe('Test.createTestingModule()', () => {
 
     const app = await module.createApp();
 
-    const response = await app.handle(new Request('http://localhost/cats'));
+    const response = await app.handle(new TestRequestBuilder().path('/cats').build());
     expect(response.status).toBe(200);
 
     const data = await response.json() ;
@@ -101,7 +103,7 @@ describe('Test.createTestingModule()', () => {
 
     const app = await module.createApp();
 
-    const response = await app.handle(new Request('http://localhost/cats'));
+    const response = await app.handle(new TestRequestBuilder().path('/cats').build());
     expect(response.status).toBe(200);
 
     const data = await response.json() ;

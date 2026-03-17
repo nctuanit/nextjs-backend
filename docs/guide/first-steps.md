@@ -4,32 +4,55 @@ This guide walks you through setting up your first `next-js-backend` application
 
 ## Prerequisites
 
-- **Bun** `>= 1.0` — [Install Bun](https://bun.sh)
+- **Bun** `>= 1.0` — [Install Bun](https://bun.sh) **or** **Node.js** `>= 20.0` — [nodejs.org](https://nodejs.org)
 - **TypeScript** `>= 5.0`
 
 ## Create a New Project
 
 Use the CLI to scaffold a project instantly:
 
-```bash
+::: code-group
+
+```bash [bun]
 npx next-js-backend new my-api
 cd my-api
 bun install
 bun run dev
 ```
 
+```bash [node]
+npx next-js-backend new my-api
+cd my-api
+npm install
+npm run dev
+```
+
+:::
+
 Your server is now running at `http://localhost:3000` 🚀
 
 ## Manual Setup
 
-If you prefer to set up manually:
-
 ### 1. Install dependencies
 
-```bash
+::: code-group
+
+```bash [bun]
 bun add next-js-backend elysia reflect-metadata
 bun add -d typescript @types/bun
 ```
+
+```bash [npm]
+npm install next-js-backend elysia reflect-metadata
+npm install -D typescript @types/node
+```
+
+```bash [pnpm]
+pnpm add next-js-backend elysia reflect-metadata
+pnpm add -D typescript @types/node
+```
+
+:::
 
 ### 2. Configure TypeScript
 
@@ -46,6 +69,10 @@ bun add -d typescript @types/bun
 }
 ```
 
+::: warning Required flags
+`experimentalDecorators` and `emitDecoratorMetadata` are both required. The framework relies on TypeScript's decorator metadata emission (`reflect-metadata`) for the DI container to resolve constructor parameter types automatically.
+:::
+
 ### 3. Create your first module
 
 ::: code-group
@@ -57,7 +84,7 @@ import { AppModule } from './modules/app/app.module';
 
 const app = await ElysiaFactory.create(AppModule);
 app.listen(3000, () => {
-  console.log('🚀 Server running at http://localhost:3000');
+  Logger.log('🚀 Server running at http://localhost:3000');
 });
 ```
 
@@ -94,7 +121,7 @@ import { Injectable } from 'next-js-backend';
 @Injectable()
 export class AppService {
   getHello() {
-    return { message: 'Hello from next-js-backend! 🚀' };
+    return { message: 'Hello from next-js-backend!' };
   }
 }
 ```
@@ -103,8 +130,20 @@ export class AppService {
 
 ### 4. Run
 
-```bash
+::: code-group
+
+```bash [bun]
 bun run src/main.ts
 ```
+
+```bash [node (tsx)]
+npx tsx src/main.ts
+```
+
+```bash [node (ts-node)]
+npx ts-node --esm src/main.ts
+```
+
+:::
 
 Visit `http://localhost:3000` — you'll see the JSON response.

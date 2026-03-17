@@ -94,6 +94,15 @@ export class AuthController {
 
 ## Password Hashing
 
+`PasswordService` selects the hashing backend automatically based on the detected runtime:
+
+| Runtime | bcrypt | argon2id / argon2d / argon2i |
+|---------|--------|------------------------------|
+| **Bun** | `Bun.password` (native) | `Bun.password` (native) |
+| **Node.js ≥ 20** | `bcryptjs` npm package | `argon2` npm package |
+
+No configuration is required — the detection happens at the first call.
+
 ```typescript
 import { PasswordService } from 'next-js-backend';
 
@@ -102,15 +111,33 @@ export class AuthService {
   constructor(private readonly passwords: PasswordService) {}
 
   async register(dto: RegisterDto) {
+    // Defaults to bcrypt (cost 10). Works identically on Bun and Node.js.
     const hashed = await this.passwords.hash(dto.password);
+    return this.userService.create({ ...dto, password: hashed });
+  }
+
+  async register_argon2(dto: RegisterDto) {
+    // Use argon2id for higher memory-hardness guarantees.
+    const hashed = await this.passwords.hash(dto.password, { algorithm: 'argon2id' });
     return this.userService.create({ ...dto, password: hashed });
   }
 
   async validateCredentials(dto: LoginDto) {
     const user = await this.userService.findByEmail(dto.email);
     if (!user) return null;
+    // verify() detects hash format ($2b$ for bcrypt, $argon2 for argon2)
+    // and delegates to the correct backend automatically.
     const valid = await this.passwords.verify(dto.password, user.password);
     return valid ? user : null;
   }
 }
 ```
+
+### Supported Algorithms
+
+| Value | Description |
+|-------|-------------|
+| `'bcrypt'` | Default. Cost factor 4–31, default 10. |
+| `'argon2id'` | Recommended for new systems. Resistant to GPU and side-channel attacks. |
+| `'argon2d'` | GPU-attack resistant, less side-channel protection. |
+| `'argon2i'` | Side-channel resistant, less GPU protection. |

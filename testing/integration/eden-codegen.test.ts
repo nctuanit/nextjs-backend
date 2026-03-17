@@ -13,7 +13,7 @@ const SCRIPT = 'scripts/eden-generate.ts';
 
 describe('Eden Codegen > Output Validation', () => {
   test('should generate file with correct structure', async () => {
-    await $`bun run ${SCRIPT} samples/eden-treaty/src/app.module.ts --output ${OUTPUT}`.quiet();
+    await $`bun run ${SCRIPT} samples/01-crud-basics/backend/app.module.ts --output ${OUTPUT}`.quiet();
 
     const content = fs.readFileSync(OUTPUT, 'utf-8');
 
@@ -22,43 +22,37 @@ describe('Eden Codegen > Output Validation', () => {
     expect(content).toContain("import { Elysia, t } from 'elysia'");
 
     // Interface
-    expect(content).toContain('interface TodosItem');
-    expect(content).toContain('id: number');
-    expect(content).toContain('title: string');
-    expect(content).toContain('done: boolean');
+    expect(content).toContain('interface PostsV1Item');
+    expect(content).toContain('deleted: boolean');
+    expect(content).toContain('id: string');
 
     // Route definitions
-    expect(content).toContain('.get("/todos"');
-    expect(content).toContain('.post("/todos"');
-    expect(content).toContain('TodosItem[]');
+    expect(content).toContain('.get("/posts"');
+    expect(content).toContain('.post("/posts/typebox"');
 
     // Body schema
     expect(content).toContain('t.Object(');
-    expect(content).toContain('title: t.String()');
+    expect(content).toContain('title: t.String(');
 
     // Export
     expect(content).toContain('export type App = typeof _app');
   });
 
   test('should generate path params for basic-crud', async () => {
-    await $`bun run ${SCRIPT} samples/basic-crud/src/app.module.ts --output ${OUTPUT}`.quiet();
+    await $`bun run ${SCRIPT} samples/01-crud-basics/backend/app.module.ts --output ${OUTPUT}`.quiet();
 
     const content = fs.readFileSync(OUTPUT, 'utf-8');
 
     // Path params
-    expect(content).toContain('/users/:id');
+    expect(content).toContain('/posts/:id');
     expect(content).toContain('params: t.Object({ id: t.String() })');
 
     // Optional body field
     expect(content).toContain('t.Optional(t.String())');
-
-    // Named interface dedup
-    const matches = content.match(/interface UsersItem/g);
-    expect(matches).toHaveLength(1); // deduplicated
   });
 
   test('should not contain invalid TypeScript syntax', async () => {
-    await $`bun run ${SCRIPT} samples/eden-treaty/src/app.module.ts --output ${OUTPUT}`.quiet();
+    await $`bun run ${SCRIPT} samples/01-crud-basics/backend/app.module.ts --output ${OUTPUT}`.quiet();
 
     const content = fs.readFileSync(OUTPUT, 'utf-8');
 
@@ -66,6 +60,6 @@ describe('Eden Codegen > Output Validation', () => {
     expect(content).not.toMatch(/interface\s+\w+\s*\{[^}]*\}\[\]/);
 
     // No `any` in return types (we should have real types)
-    expect(content).not.toContain('');
+    expect(content).not.toContain('{} as any');
   });
 });

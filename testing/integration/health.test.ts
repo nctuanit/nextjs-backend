@@ -10,6 +10,8 @@ import { Controller, Get, Module } from '../../index';
 import { ElysiaFactory } from '../../src/factory/elysia-factory';
 import { HealthModule } from '../../src/health';
 import { HealthService } from '../../src/health/health.service';
+import { TestRequestBuilder } from '../../src/testing/request-builder';
+
 
 describe('HealthModule > Integration', () => {
   test('should expose GET /health with full response shape', async () => {
@@ -17,7 +19,7 @@ describe('HealthModule > Integration', () => {
     class App {}
 
     const app = await ElysiaFactory.create(App);
-    const res = await app.handle(new Request('http://localhost/health'));
+    const res = await app.handle(new TestRequestBuilder().path('/health').build());
 
     expect(res.status).toBe(200);
     const data = await res.json() ;
@@ -47,11 +49,11 @@ describe('HealthModule > Integration', () => {
     const app = await ElysiaFactory.create(App);
 
     // Health endpoint works
-    const healthRes = await app.handle(new Request('http://localhost/health'));
+    const healthRes = await app.handle(new TestRequestBuilder().path('/health').build());
     expect(healthRes.status).toBe(200);
 
     // Custom endpoint works alongside
-    const apiRes = await app.handle(new Request('http://localhost/api/ping'));
+    const apiRes = await app.handle(new TestRequestBuilder().path('/api/ping').build());
     expect(apiRes.status).toBe(200);
     const apiData = await apiRes.json() ;
     expect(apiData.pong).toBe(true);

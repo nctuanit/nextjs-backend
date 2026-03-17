@@ -85,8 +85,8 @@ const result = await WorkflowRuntime.execute(orderWorkflow, {
 });
 
 if (result.status === 'completed') {
-  console.log('Done in', result.duration, 'ms');
-  console.log('Tracking:', result.context.trackingNumber);
+  Logger.log('Done in', result.duration, 'ms');
+  Logger.log('Tracking:', result.context.trackingNumber);
 } else {
   console.error('Failed at step:', result.steps.find(s => s.status === 'failed'));
 }

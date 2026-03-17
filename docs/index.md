@@ -4,7 +4,7 @@ layout: home
 hero:
   name: "Next.js Backend"
   text: "Enterprise-grade backend for Next.js"
-  tagline: NestJS-style architecture powered by Bun & ElysiaJS. Build scalable APIs with Dependency Injection, Guards, Interceptors and AI Agents — all inside your Next.js app.
+  tagline: NestJS-style architecture powered by Bun & Node.js with ElysiaJS. Build scalable APIs with Dependency Injection, Guards, Interceptors and AI Agents — all inside your Next.js app.
   actions:
     - theme: brand
       text: Get Started
@@ -18,8 +18,8 @@ features:
     title: NestJS-style Architecture
     details: Decorators, DI Container, Modules, Controllers, Guards, Interceptors and Pipes — the familiar patterns you already know.
   - icon: ⚡
-    title: Powered by Bun & Elysia
-    details: Runs on the fastest JS runtime with ElysiaJS for ultra-high performance and native TypeBox schema integration.
+    title: Powered by Bun & Node.js
+    details: Runs on Bun (native speed) or Node.js ≥ 20. Password hashing and compression auto-detect the runtime — no config needed. Backed by ElysiaJS for ultra-high performance.
   - icon: 🤖
     title: Built-in AI Module
     details: Multi-provider LLM agents, tool registry, memory system (Redis/InMemory), workflow engine and A2A protocol support.

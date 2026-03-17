@@ -84,7 +84,7 @@ export class ElysiaFactory {
                        /___/                                                           
                                                                            (v${version})
      `;
-    console.log(`\x1b[36m${banner}\x1b[0m`);
+    this.logger.log(`\x1b[36m${banner}\x1b[0m`);
     this.logger.log('Starting Next.js-Backend application...');
     
     let app = new Elysia({ prefix: options?.globalPrefix });
@@ -197,7 +197,7 @@ export class ElysiaFactory {
         });
         
         app = app.onAfterResponse(({ request, set, body }) => {
-            // console.log('[DEV_MODE_HOOK] Fired for', request.method, request.url);
+            // Logger.debug('[DEV_MODE_HOOK] Fired for ' + request.method + ' ' + request.url);
             try {
                 const reqId = (request as Request & { reqId?: string }).reqId;
                 const start = reqId ? reqStartTimes.get(reqId) || performance.now() : performance.now();
@@ -455,9 +455,7 @@ export class ElysiaFactory {
              }));
            }
 
-           finalAppRoute[elysiaMethod]!(
-             fullPath, 
-             async (context: Context) => {
+           const handler = async (context: Context) => {
                // 1. Extract base args
                const extractedArgs = await ElysiaFactory.extractContextArgs(routeArgsMetadata, context);
                
@@ -554,16 +552,17 @@ export class ElysiaFactory {
                  // Re-throw to Elysia's global error handler if no local filter caught it
                  throw error;
                }
+           };
 
-              // Also register versioned routes with identical handler
-              const versionedPaths: string[] | undefined = (methodFn as Function & { __versionedPaths?: string[] }).__versionedPaths;
-              if (versionedPaths?.length && options?.versioning?.type === 'uri') {
-                // Handler was already registered above for fullPath — we need to also do versioned paths
-                // They're registered inline in the same block below
-              }
-             },
-             routeConfig
-          );
+           const pathsToRegister = [fullPath];
+           const versionedPaths = Object.getOwnPropertyDescriptor(methodFn, '__versionedPaths')?.value as string[] | undefined;
+           if (versionedPaths?.length && options?.versioning?.type === 'uri') {
+             pathsToRegister.push(...versionedPaths);
+           }
+
+           pathsToRegister.forEach(p => {
+             finalAppRoute[elysiaMethod]!(p, handler, routeConfig);
+           });
         }
       }
     }
@@ -724,7 +723,7 @@ export class ElysiaFactory {
       }
     }
 
-    // --- Compression: wire Bun-native gzip/brotli/deflate via onAfterHandle ---
+    // --- Compression: cross-runtime gzip/brotli/deflate via onAfterHandle ---
     let compressionConfig: Required<CompressionOptions> | null = null;
     try {
       compressionConfig = await globalContainer.resolve<Required<CompressionOptions>>(COMPRESSION_CONFIG);
@@ -733,6 +732,10 @@ export class ElysiaFactory {
     if (compressionConfig) {
       const { encoding, threshold, level } = compressionConfig;
       this.logger.log(`Response compression enabled [${encoding}, threshold=${threshold}B, level=${level}]`);
+
+      // Detect runtime once
+      const hasBunZlib = typeof globalThis.Bun !== 'undefined' &&
+        typeof (globalThis.Bun as Record<string, unknown>).gzipSync === 'function';
 
       app = app.onAfterHandle(async ({ request, response }) => {
         // Only compress if client accepts this encoding
@@ -745,21 +748,46 @@ export class ElysiaFactory {
         const buffer = await response.arrayBuffer();
         if (buffer.byteLength < threshold) return response;
 
-        // Clamp level to valid range for Bun's zlib APIs (0-9)
+        // Clamp level to valid range for zlib APIs (0-9)
         const clampedLevel = Math.min(9, Math.max(0, level)) as 0|1|2|3|4|5|6|7|8|9;
         let compressedBuffer: ArrayBuffer;
-        if (encoding === 'gzip') {
-          compressedBuffer = Bun.gzipSync(buffer, { level: clampedLevel }).buffer as ArrayBuffer;
-        } else if (encoding === 'br') {
-          // Bun doesn't expose brotli sync — fall back to gzip
-          compressedBuffer = Bun.gzipSync(buffer, { level: clampedLevel }).buffer as ArrayBuffer;
+
+        if (hasBunZlib) {
+          // Bun native path (brotli not supported natively — fall back to gzip)
+          const bunGlobal = globalThis.Bun as {
+            gzipSync(buf: ArrayBuffer, opts: { level: number }): { buffer: ArrayBuffer };
+            deflateSync(buf: ArrayBuffer, opts: { level: number }): { buffer: ArrayBuffer };
+          };
+          if (encoding === 'deflate') {
+            compressedBuffer = bunGlobal.deflateSync(buffer, { level: clampedLevel }).buffer;
+          } else {
+            // gzip and br (br falls back to gzip)
+            compressedBuffer = bunGlobal.gzipSync(buffer, { level: clampedLevel }).buffer;
+          }
         } else {
-          compressedBuffer = Bun.deflateSync(buffer, { level: clampedLevel }).buffer as ArrayBuffer;
+          // Node.js path — use built-in zlib (synchronous)
+          const zlib = await import('node:zlib');
+          const input = Buffer.from(buffer);
+          let compressed: Buffer;
+          if (encoding === 'br') {
+            compressed = zlib.brotliCompressSync(input, {
+              params: { [zlib.constants.BROTLI_PARAM_QUALITY]: clampedLevel },
+            });
+          } else if (encoding === 'deflate') {
+            compressed = zlib.deflateSync(input, { level: clampedLevel });
+          } else {
+            compressed = zlib.gzipSync(input, { level: clampedLevel });
+          }
+          compressedBuffer = compressed.buffer.slice(
+            compressed.byteOffset,
+            compressed.byteOffset + compressed.byteLength,
+          ) as ArrayBuffer;
         }
 
         const newHeaders = new Headers(response.headers);
-        // If we fell back to gzip for br, still report gzip so client decompresses correctly
-        newHeaders.set('Content-Encoding', encoding === 'br' ? 'gzip' : encodingName);
+        // For br fallback to gzip on Bun, report gzip so client decompresses correctly
+        const reportedEncoding = (encoding === 'br' && hasBunZlib) ? 'gzip' : encodingName;
+        newHeaders.set('Content-Encoding', reportedEncoding);
         newHeaders.delete('Content-Length'); // let transport recalculate actual length
         return new Response(compressedBuffer, {
           status: response.status,
@@ -886,20 +914,23 @@ export class ElysiaFactory {
     return args;
   }
 
+  
+
   /**
    * Helper function to directly mount the application into Next.js App Router.
    * Simply destruct the HTTP method verbs and export them in your `route.ts`.
    * e.g., export const { GET, POST, PUT, PATCH, DELETE } = ElysiaFactory.createNextJsHandlers(AppModule, { globalPrefix: '/api' });
    */
   static createNextJsHandlers(module: Type<unknown>, options?: FactoryOptions) {
-    let appInstance: Elysia | null = null;
+    let appPromise: Promise<Elysia> | null = null;
     
     // We instantiate the application only once (Singleton pattern)
+    // Using a promise prevents concurrent requests from initiating multiple backend starts
     const getApp = async () => {
-      if (!appInstance) {
-        appInstance = await ElysiaFactory.create(module, options);
+      if (!appPromise) {
+        appPromise = ElysiaFactory.create(module, options);
       }
-      return appInstance;
+      return appPromise;
     };
 
     const handler = async (req: Request) => {
@@ -917,5 +948,53 @@ export class ElysiaFactory {
       HEAD: handler,
     };
   }
+
+  /**
+   * Mounts Elysia's WebSocket Gateway natively onto a Next.js Custom Server stream.
+   * This leaves all standard Web APIs to Next.js API Routes (via `createNextJsHandlers`),
+   * whilst trapping stateful WebSocket upgrades perfectly without breaking `EADDRINUSE` HMR!
+   */
+  static async createWebSocketNodeMounter(module: Type<unknown>, options?: FactoryOptions) {
+    const httpProxy = require('http-proxy');
+
+    // Boot Elysia WebSockets dynamically on ephemeral zero-config port
+    const app = await ElysiaFactory.create(module, options);
+    
+    // Using port 0 ensures no conflicting ports are explicitly assigned by OS
+    const listener = app.listen(0);
+    const elysiaPort = listener.server?.port;
+
+    // Create a WS-only Proxy Bridge
+    const proxy = httpProxy.createProxyServer({
+      target: `ws://127.0.0.1:${elysiaPort}`,
+      ws: true,
+    });
+
+    proxy.on('error', (err: any) => {
+      console.error('[Elysia WebSocket Proxy Error]', err);
+    });
+
+    const prefix = options?.globalPrefix || '/api';
+
+    /**
+     * Natively attaches to an existing Next.js `http.createServer().on('upgrade')` lifecycle.
+     */
+    return (nextApp: any) => {
+      return (req: any, socket: any, head: any) => {
+        if (req.url?.startsWith(`${prefix}/ws`) || req.url?.startsWith('/ws')) {
+          proxy.ws(req, socket, head);
+          return;
+        }
+        
+        // Native fallback to Next.js Hot Module Reload (HMR) websocket chunk
+        if (nextApp.getUpgradeHandler) {
+          nextApp.getUpgradeHandler()(req, socket, head);
+        } else {
+          socket.destroy();
+        }
+      };
+    };
+  }
 }
+
 

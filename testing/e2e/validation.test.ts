@@ -4,6 +4,8 @@ import { Controller, Get, Post, Body, Param, Query, Schema, ElysiaFactory } from
 import { UsePipes, ValidationPipe } from '../../index';
 import { Module } from '../../index';
 import { IsString, IsInt, Min } from 'class-validator';
+import { TestRequestBuilder } from '../../src/testing/request-builder';
+
 
 class TestDto {
   @IsString()
@@ -54,8 +56,13 @@ describe('E2E Validation & Schema Pipes', () => {
     app = await ElysiaFactory.create(ValidationModule);
   });
   
-  const req = (path: string, options?: RequestInit) => 
-    app.handle(new Request(`http://localhost${path}`, options));
+  const req = (path: string, options?: any) => {
+    const builder = new TestRequestBuilder().path(path);
+    if (options?.method) builder.method(options.method);
+    if (options?.headers) builder.headers(options.headers);
+    if (options?.body) builder.body(options.body);
+    return app.handle(builder.build());
+  };
 
   it('should cast numeric params with @Schema decorator', async () => {
     const res = await req('/validation/schema/42');

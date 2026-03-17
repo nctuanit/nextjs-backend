@@ -48,7 +48,7 @@ Use with `createParamDecorator`:
 ```typescript
 export const CurrentUser = createParamDecorator(
   (data: string | undefined, ctx: Context) => {
-    const user = (ctx as any).user;
+    const user = ctx.user;
     return data ? user?.[data] : user;
   },
 );

@@ -25,7 +25,7 @@ const product = await generateStructured(provider, 'openai:gpt-4o', [
 });
 
 // product is: { name: string; price: number; category: string; inStock: boolean; tags: string[] }
-console.log(product.price); // 999
+Logger.log(product.price); // 999
 ```
 
 ## Via AiService

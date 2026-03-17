@@ -7,6 +7,8 @@ import { Module } from '../../decorators/module.decorator';
 import { Injectable } from '../../di/injectable.decorator';
 import { ElysiaFactory } from '../elysia-factory';
 import { ExceptionFilter } from '../../interfaces';
+import { TestRequestBuilder } from '../../testing/request-builder';
+
 
 class CustomError extends Error {
   constructor(message: string) {
@@ -67,7 +69,7 @@ class ErrorModule {}
 describe('Exception Filters', () => {
   test('should catch specific error via local @UseFilters', async () => {
     const app = await ElysiaFactory.create(ErrorModule);
-    const req = new Request('http://localhost/errors/custom');
+    const req = new TestRequestBuilder().path('/errors/custom').build();
     const res = await app.handle(req);
     const json = await res.json() ;
     
@@ -80,7 +82,7 @@ describe('Exception Filters', () => {
     const app = await ElysiaFactory.create(ErrorModule, {
       globalFilters: [GlobalFallbackFilter]
     });
-    const req = new Request('http://localhost/errors/unhandled');
+    const req = new TestRequestBuilder().path('/errors/unhandled').build();
     const res = await app.handle(req);
     const json = await res.json() ;
     
@@ -92,7 +94,7 @@ describe('Exception Filters', () => {
     const app = await ElysiaFactory.create(ErrorModule, {
       globalFilters: [GlobalFallbackFilter]
     });
-    const req = new Request('http://localhost/errors/success');
+    const req = new TestRequestBuilder().path('/errors/success').build();
     const res = await app.handle(req);
     const json = await res.json() ;
     

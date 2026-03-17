@@ -1,8 +1,10 @@
 import { describe, expect, it, beforeAll } from 'bun:test';
-import { Controller, Get, ElysiaFactory } from '../../index';
+import { Controller, Get, ElysiaFactory, Module } from '../../index';
 import { UseInterceptors, Injectable } from '../../index';
 import { CacheModule, CacheInterceptor, CacheKey, CacheTTL, CACHE_MANAGER } from '../../index';
 import { globalContainer } from '../../index';
+import { TestRequestBuilder } from '../../src/testing/request-builder';
+
 
 let executionCount = 0;
 
@@ -45,14 +47,21 @@ describe('CacheModule & CacheInterceptor', () => {
     const moduleDef = CacheModule.register();
     globalContainer.addProviders(moduleDef.providers || []);
     
-    app = await ElysiaFactory.create({
-      module: class DummyModule {},
+    @Module({
       controllers: [CacheController]
-    } );
+    })
+    class DummyModule {}
+
+    app = await ElysiaFactory.create(DummyModule);
   });
 
-  const req = (path: string, options?: RequestInit) =>
-    app.handle(new Request(`http://localhost${path}`, options));
+  const req = (path: string, options?: any) => {
+    const builder = new TestRequestBuilder().path(path);
+    if (options?.method) builder.method(options.method);
+    if (options?.headers) builder.headers(options.headers);
+    if (options?.body) builder.body(options.body);
+    return app.handle(builder.build());
+  };
 
   it('should cache response with default URL-based key', async () => {
     // 1st request - should execute and cache
@@ -78,7 +87,7 @@ describe('CacheModule & CacheInterceptor', () => {
     expect(body2.id).toBe(2); // From cache
 
     // Wait and verify inside the actual cache manager that the specific custom key exists
-    const cacheManager = await globalContainer.resolve(CACHE_MANAGER) ;
+    const cacheManager = await globalContainer.resolve(CACHE_MANAGER) as any;
     const value = await cacheManager.get('my_custom_key');
     expect(value).toEqual({ data: 'Custom key cache value', id: 2 });
   });
